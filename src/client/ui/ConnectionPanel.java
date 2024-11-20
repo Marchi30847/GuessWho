@@ -22,7 +22,7 @@ public class ConnectionPanel extends JPanel {
         setLayout(new BorderLayout());
         setBackground(Pallet.BACKGROUND.value());
 
-        JLabel titleLabel = new JLabel("Guess Who?");
+        JLabel titleLabel = new JLabel("JOIN A NEW GAME");
         addFormattedFont(titleLabel);
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
         titleLabel.setPreferredSize(new Dimension(getWidth(), 150));
@@ -105,9 +105,12 @@ public class ConnectionPanel extends JPanel {
 
     private void connectToServer() {
         connect.addActionListener(e -> {
-            if (!hostId.getText().equals("here") && !hostId.getText().equals("here")) {
-                if (client.connect(hostId.getText(), Integer.parseInt(port.getText()))) {
-                    client.getViewManager().showGamePanel();
+            if (userName != null && hostId != null && port != null) {
+                if (!hostId.getText().equals("here") && !hostId.getText().equals("here")) {
+                    client.setUserName(userName.getText());
+                    if (client.connect(hostId.getText(), Integer.parseInt(port.getText()))) {
+                        client.getViewManager().showGamePanel();
+                    }
                 }
             }
         });

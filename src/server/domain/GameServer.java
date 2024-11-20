@@ -1,8 +1,11 @@
 package server.domain;
 
+import server.data.ChatMessage;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -11,6 +14,8 @@ public class GameServer {
     private final int port = 5588;
 
     private final List<ClientHandler> clients = new LinkedList<>();
+
+    private final ArrayList<ChatMessage> chatHistory = new ArrayList<>();
 
     public static void main(String[] args) {
         GameServer gameServer = new GameServer();
@@ -27,8 +32,10 @@ public class GameServer {
             try {
                 System.out.println("Waiting for clients...");
                 Socket socket = serverSocket.accept();
-                System.out.println("New client connected");
-                ClientHandler client = new ClientHandler(serverSocket, socket);
+                ClientHandler client = new ClientHandler(this, socket);
+                synchronized (client) {
+                    System.out.println("Client " + client.getClientName() + " connected");
+                }
                 synchronized (clients) {
                     clients.add(client);
                 }
@@ -39,9 +46,56 @@ public class GameServer {
         }
     }
 
+    public void sendMessageToAllClients(ClientHandler sender, String message) {
+        synchronized (clients) {
+            sender.getOut().println(message);
+            for (ClientHandler client : clients) {
+                if (client == sender) continue;
+                client.getOut().println(message);
+            }
+        }
+    }
+
+    public void sendMessageToClients(ClientHandler sender, ArrayList<String> clientNames, String message) {
+        synchronized (clients) {
+            sender.getOut().println(message);
+            for (ClientHandler client : clients) {
+                if (client == sender) continue;
+                if (clientNames.contains(client.getClientName())) client.getOut().println(message);
+            }
+        }
+    }
+
+    public void sendMessageExceptClients(ClientHandler sender, ArrayList<String> clientNames, String message) {
+        synchronized (clients) {
+            sender.getOut().println(message);
+            for (ClientHandler client : clients) {
+                if (client == sender) continue;
+                if (clientNames.contains(client.getClientName())) continue;
+                client.getOut().println(message);
+            }
+        }
+    }
+
+    public void sendUnknownCommandMessage(String clientName) {
+        synchronized (clients) {
+            for (ClientHandler client : clients) {
+                if (clientName.equals(client.getClientName())) client.getOut().println("Unknown command");
+            }
+        }
+    }
+
     public void removeClient(ClientHandler client) {
         synchronized (clients) {
             clients.remove(client);
         }
     }
+
+    public void addMessage(ChatMessage message) {
+        synchronized (chatHistory) {
+            chatHistory.add(message);
+        }
+    }
+
+    public ArrayList<ChatMessage> getChatHistory() {return chatHistory;}
 }

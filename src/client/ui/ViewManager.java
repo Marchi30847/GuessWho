@@ -27,7 +27,7 @@ public class ViewManager {
 
     private void initPanels() {
         connectionPanel = new ConnectionPanel(client);
-        gamePanel = new GamePanel(client);
+        gamePanel = new GamePanel(client, frame.getSize());
     }
 
     public void showConnectionPanel() {
@@ -42,4 +42,5 @@ public class ViewManager {
         frame.revalidate();
     }
 
+    public GamePanel getGamePanel() {return gamePanel;}
 }

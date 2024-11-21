@@ -35,9 +35,10 @@ public class ChatPanel extends JPanel {
         this.clientMessage.setFocusable(true);
         this.clientMessage.addKeyListener(new KeyAdapter() {
             @Override
-            public void keyTyped(KeyEvent e) {
+            public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER && !clientMessage.getText().isEmpty()) {
                     client.sendMessageToServer(clientMessage.getText());
+                    System.out.println("jfjf");
                     clientMessage.setText("");
                 }
             }

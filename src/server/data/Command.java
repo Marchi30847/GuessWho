@@ -1,6 +1,5 @@
 package server.data;
 
-import client.domain.GameClient;
 import server.domain.ClientHandler;
 import server.domain.GameServer;
 
@@ -8,26 +7,45 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public enum Command {
-    ALL("/all") {
+    ALL("/all ") {
         @Override
         public void execute(GameServer server, ClientHandler sender, StringBuilder message) {
+            removePrefix(message);
             server.sendMessageToAllClients(sender, message);
         }
-    },
-    TO("/to") {
-        @Override
-        public void execute(GameServer server, ClientHandler sender, StringBuilder message) {
-            ArrayList<String> clientNames = extractClientNames(message);
-            if (clientNames == null) server.sendIncorrectSyntaxMessage(sender);
-            else server.sendMessageToClients(sender, clientNames, message);
+
+        private void removePrefix(StringBuilder message) {
+            message.delete(0, this.getCommand().length());
         }
     },
-    EXCEPT("/except") {
+    TO("/to ") {
         @Override
         public void execute(GameServer server, ClientHandler sender, StringBuilder message) {
             ArrayList<String> clientNames = extractClientNames(message);
             if (clientNames == null) server.sendIncorrectSyntaxMessage(sender);
-            else server.sendMessageExceptClients(sender, clientNames, message);
+            else {
+                removePrefix(message);
+                server.sendMessageToClients(sender, clientNames, message);
+            }
+        }
+
+        private void removePrefix(StringBuilder message) {
+            message.delete(0, message.toString().indexOf(']') + 1);
+        }
+    },
+    EXCEPT("/except ") {
+        @Override
+        public void execute(GameServer server, ClientHandler sender, StringBuilder message) {
+            ArrayList<String> clientNames = extractClientNames(message);
+            if (clientNames == null) server.sendIncorrectSyntaxMessage(sender);
+            else {
+                removePrefix(message);
+                server.sendMessageExceptClients(sender, clientNames, message);
+            }
+        }
+
+        private void removePrefix(StringBuilder message) {
+            message.delete(0, message.toString().indexOf(']') + 1);
         }
     },
     LIST("/list") {
@@ -39,13 +57,13 @@ public enum Command {
     BAN("/banWords") {
         @Override
         public void execute(GameServer server, ClientHandler sender, StringBuilder message) {
-
+            server.sendBannedList(sender);
         }
     },
     HELP("/help") {
         @Override
         public void execute(GameServer server, ClientHandler sender, StringBuilder message) {
-            server.sendHelp(sender);
+            server.sendHelpList(sender);
         }
     };
 
@@ -56,7 +74,6 @@ public enum Command {
     }
 
     public abstract void execute(GameServer server, ClientHandler sender, StringBuilder message);
-
     private static ArrayList<String> extractClientNames(StringBuilder message) {
         int listBegin = message.indexOf("[");
         int listEnd = message.indexOf("]");

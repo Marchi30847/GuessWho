@@ -14,10 +14,8 @@ public class ClientHandler implements Runnable {
     private PrintWriter out;
     private BufferedReader in;
 
-    private String clientName;
-    private int clientPort;
-
-    private boolean active = true;
+    private final String clientName;
+    private final int clientPort;
 
     ClientHandler(GameServer server, Socket clientSocket) {
         this.server = server;
@@ -41,19 +39,21 @@ public class ClientHandler implements Runnable {
     @Override
     public void run() {
         try {
-            while (active) {
-                String message = in.readLine();
+            String message;
+            while ((message = in.readLine()) != null) {
                 System.out.println(message);
                 respond(new StringBuilder(message));
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.out.println(e.getMessage());
+        } finally {
+            disconnect();
         }
     }
 
     public void respond(StringBuilder message) {
         if (message.charAt(0) != '/') {
-            Command.ALL.execute(server, this, message.insert(0, "/all"));
+            Command.ALL.execute(server, this, message.insert(0, "/all "));
             return;
         }
         for (Command command : Command.values()) {
@@ -63,6 +63,19 @@ public class ClientHandler implements Runnable {
             }
         }
         server.sendUnknownCommandMessage(this);
+    }
+
+    private void disconnect() {
+        try {
+            server.removeClient(this);
+            if (in != null) in.close();
+            if (out != null) out.close();
+            if (clientSocket != null) clientSocket.close();
+            System.out.println("Client " + clientName + " disconnected.");
+        } catch (IOException e) {
+            System.err.println("Error closing connection for client: " + clientName);
+        }
+
     }
 
     public String getClientName() {return clientName;}

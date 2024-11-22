@@ -32,13 +32,13 @@ public class ChatPanel extends JPanel {
         this.clientMessage = new JTextField();
         this.clientMessage.setPreferredSize(new Dimension(size.width, 50));
         this.clientMessage.setBackground(Pallet.CHAT.value());
+        this.clientMessage.setForeground(Pallet.MESSAGE.value());
         this.clientMessage.setFocusable(true);
         this.clientMessage.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER && !clientMessage.getText().isEmpty()) {
                     client.sendMessageToServer(clientMessage.getText());
-                    System.out.println("jfjf");
                     clientMessage.setText("");
                 }
             }
@@ -51,15 +51,15 @@ public class ChatPanel extends JPanel {
         this.add(this.clientMessage, BorderLayout.SOUTH);
     }
 
-    public void addMessage(String sender, String message, Color color) {
+    public void addMessage(StringBuilder sender, StringBuilder message, Color senderColor, Color messageColor) {
         StyledDocument doc = chatBody.getStyledDocument();
 
         Style senderStyle = chatBody.addStyle("SenderStyle", null);
-        StyleConstants.setForeground(senderStyle, color);
+        StyleConstants.setForeground(senderStyle, senderColor);
         StyleConstants.setBold(senderStyle, true);
 
         Style messageStyle = chatBody.addStyle("MessageStyle", null);
-        StyleConstants.setForeground(messageStyle, Color.BLACK);
+        StyleConstants.setForeground(messageStyle, messageColor);
 
         try {
             doc.insertString(doc.getLength(), sender + ": ", senderStyle);

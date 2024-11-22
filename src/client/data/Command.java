@@ -5,13 +5,13 @@ import client.domain.GameClient;
 public enum Command {
     SERVER("/Server") {
         @Override
-        public void execute(GameClient client, StringBuilder message) {
-            client.handleServerMessage(message);
+        public void execute(GameClient client, StringBuilder sender, StringBuilder message) {
+            client.handleServerMessage(sender, message);
         }
     },
     CLIENT("/Client") {
-        public void execute(GameClient client, StringBuilder message) {
-            client.handleClientMessage(message);
+        public void execute(GameClient client, StringBuilder sender, StringBuilder message) {
+            client.handleClientMessage(sender, message);
         }
     };
     private final String command;
@@ -20,7 +20,7 @@ public enum Command {
         this.command = command;
     }
 
-    public abstract void execute(GameClient client, StringBuilder message);
+    public abstract void execute(GameClient client, StringBuilder sender, StringBuilder message);
 
     public String getCommand() {
         return command;

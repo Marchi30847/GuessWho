@@ -1,5 +1,6 @@
 package client.domain;
 
+import client.data.Pallet;
 import client.ui.ChatPanel;
 import client.ui.ViewManager;
 import client.data.Command;
@@ -49,55 +50,38 @@ public class GameClient implements Runnable {
     public void run() {
         while (true) {
             try {
+                String command = in.readLine();
+                String sender = in.readLine();
                 String message = in.readLine();
-                System.out.println(message);
-                respond(new StringBuilder(message));
+                if (command == null || sender == null || message == null) break;
+                System.out.println(command + " " + sender + " " + message);
+                respond(new StringBuilder(command), new StringBuilder(sender), new StringBuilder(message));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
     }
 
-    public void respond(StringBuilder message) {
-        for (Command command : Command.values()) {
-            if (message.toString().startsWith(command.getCommand())) {
-                command.execute(this, message);
-                return;
-            }
+    public void respond(StringBuilder command, StringBuilder sender, StringBuilder message) {
+        for (Command cmd : Command.values()) {
+            if (cmd.getCommand().contentEquals(command)) cmd.execute(this, sender, message);
         }
     }
 
-    public void handleServerMessage(StringBuilder message) {
-        normaliseMessage(message);
-        getChatPanel().addMessage("Server", message.toString(), Color.YELLOW);
+    public void handleServerMessage(StringBuilder sender, StringBuilder message) {
+        getChatPanel().addMessage(sender, message,
+                Pallet.SERVER.value(), Pallet.MESSAGE.value());
     }
 
-    public void handleClientMessage(StringBuilder message) {
-        normaliseMessage(message);
-        getChatPanel().addMessage("Client", message.toString(), Color.BLUE);
+    public void handleClientMessage(StringBuilder sender, StringBuilder message) {
+        getChatPanel().addMessage(sender, message,
+                Pallet.CLIENT.value(), Pallet.MESSAGE.value());
     }
 
-    private void normaliseMessage(StringBuilder message) {
-        for (Command command : Command.values()) {
-            if (message.toString().startsWith(command.getCommand())) message.delete(0, command.getCommand().length());
-        }
-    }
-
-    public String getUserName() {
-        return userName;
-    }
-
-    public ViewManager getViewManager() {
-        return viewManager;
-    }
-
-    public ChatPanel getChatPanel() {
-        return viewManager.getGamePanel().getChatPanel();
-    }
-
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
+    public String getUserName() {return userName;}
+    public ViewManager getViewManager() {return viewManager;}
+    public ChatPanel getChatPanel() {return viewManager.getGamePanel().getChatPanel();}
+    public void setUserName(String userName) {this.userName = userName;}
 
     public static void main(String[] args) {
         new GameClient();

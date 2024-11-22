@@ -1,4 +1,4 @@
 package server.data;
 
-public record ChatMessage(String sender, String message) {
+public record ChatMessage(String command, String sender, String message) {
 }

@@ -44,30 +44,36 @@ public class GameServer {
                 System.out.println("Waiting for clients...");
                 Socket socket = serverSocket.accept();
                 ClientHandler client = new ClientHandler(this, socket);
-                System.out.println("Client " + client.getClientName() + " connected");
-                handleClientConnection(client);
-                sendClientConnectedMessage(client);
+                new Thread(client).start();
             } catch (IOException e) {
                 System.err.println("Accept failed");
             }
         }
     }
 
-    public void handleClientConnection(ClientHandler client) {
-        new Thread(client).start();
+    public void startClient(ClientHandler client) {
         synchronized (clients) {
             clients.add(client);
-            //check deadlocks
-            synchronized (chatHistory) {
-                sendChatHistory(client);
-            }
+            sendChatHistory(client);
+            sendClientConnectedMessage(client);
             sendClientList(client);
             sendHelpList(client);
         }
     }
 
+    public boolean clientHasRepeatingName(ClientHandler client) {
+        for (ClientHandler c : clients) {
+            if (c.getClientName().equals(client.getClientName())) return true;
+        }
+        return false;
+    }
+
     public void sendMessageToAllClients(ClientHandler sender, StringBuilder message) {
         synchronized (clients) {
+            if (containsBannedWord(message.toString())) {
+                sendContainsBannedWordMessage(sender);
+                return;
+            }
             for (ClientHandler client : clients) {
                 if (client == sender) {
                     sender.getOut().println(formatMessage(
@@ -91,6 +97,10 @@ public class GameServer {
 
     public void sendMessageToClients(ClientHandler sender, ArrayList<String> clientNames, StringBuilder message) {
         synchronized (clients) {
+            if (containsBannedWord(message.toString())) {
+                sendContainsBannedWordMessage(sender);
+                return;
+            }
             for (ClientHandler client : clients) {
                 if (client == sender) {
                     sender.getOut().println(formatMessage(
@@ -104,7 +114,7 @@ public class GameServer {
                 if (clientNames.contains(client.getClientName())) {
                     client.getOut().println(formatMessage(
                                     "/Client",
-                                     "(Personal)" + sender.getClientName(),
+                                     "(Personal) " + sender.getClientName(),
                                     message.toString()
                             )
                     );
@@ -115,6 +125,10 @@ public class GameServer {
 
     public void sendMessageExceptClients(ClientHandler sender, ArrayList<String> clientNames, StringBuilder message) {
         synchronized (clients) {
+            if (containsBannedWord(message.toString())) {
+                sendContainsBannedWordMessage(sender);
+                return;
+            }
             for (ClientHandler client : clients) {
                 if (client == sender) {
                     sender.getOut().println(formatMessage(
@@ -128,7 +142,7 @@ public class GameServer {
                 if (clientNames.contains(client.getClientName())) continue;
                 client.getOut().println(formatMessage(
                                 "/Client",
-                                "(Personal)" + sender.getClientName(),
+                                "(Personal) " + sender.getClientName(),
                                 message.toString()
                         )
                 );
@@ -221,7 +235,7 @@ public class GameServer {
             sender.getOut().println(formatMessage(
                             "/Server",
                             serverName,
-                            "Unknown command, for more info use /help"
+                            "Unknown command, for more info use " + Command.HELP.getCommand()
                     )
             );
         }
@@ -232,12 +246,33 @@ public class GameServer {
             sender.getOut().println(formatMessage(
                             "/Server",
                             serverName,
-                            "Incorrect syntax, for more info use /help"
+                            "Incorrect syntax, for more info use " + Command.HELP.getCommand()
                     )
             );
 
         }
     }
+
+    public void sendContainsBannedWordMessage(ClientHandler sender) {
+        synchronized (clients) {
+            sender.getOut().println(formatMessage(
+                            "/Server",
+                            serverName,
+                            "Your message contains banned words, for more info use " + Command.BAN.getCommand()
+                    )
+            );
+        }
+    }
+
+    public void sendChangeNameMessage(ClientHandler client) {
+        client.getOut().println(formatMessage(
+                        "/Server",
+                        serverName,
+                        "Your username is already in use, please use another one"
+                )
+        );
+    }
+
 
     private String formatMessage(String command, String sender, String message) {
        return command + "\n" + sender + "\n" + message;
@@ -247,6 +282,15 @@ public class GameServer {
         return chatMessage.command() + "\n" + chatMessage.sender() + "\n" + chatMessage.message();
     }
 
+    public boolean containsBannedWord(String message) {
+        message = message.toLowerCase();
+        String[] words = message.split(" ");
+        for (String word : words) {
+            if(bannedWords.contains(word)) return true;
+        }
+        return false;
+    }
+
     public void removeClient(ClientHandler client) {
         synchronized (clients) {
             clients.remove(client);
@@ -254,7 +298,7 @@ public class GameServer {
         }
     }
 
-    public void addMessage(String command, String sender, String message) {
+    private void addMessage(String command, String sender, String message) {
         synchronized (chatHistory) {
             chatHistory.add(new ChatMessage(command, sender, message));
         }

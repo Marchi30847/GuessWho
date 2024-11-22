@@ -5,6 +5,8 @@ import client.domain.GameClient;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -13,9 +15,7 @@ public class ConnectionPanel extends JPanel {
 
     private final JTextField userName;
     private final JTextField hostId;
-    private final JTextField port;
-
-    private final JButton connect;
+    private final JTextField hostPort;
 
     public ConnectionPanel(GameClient client) {
         this.client = client;
@@ -53,23 +53,18 @@ public class ConnectionPanel extends JPanel {
         JLabel hostPortLabel = new JLabel("Enter Host Port: ");
         addFormattedFont(hostPortLabel);
         inputPanel.add(hostPortLabel);
-        port = new JTextField("here");
-        addFormattedFont(port);
-        port.setBackground(Pallet.BACKGROUND.value());
-        inputPanel.add(port);
+        hostPort = new JTextField("here");
+        addFormattedFont(hostPort);
+        hostPort.setBackground(Pallet.BACKGROUND.value());
+        inputPanel.add(hostPort);
+
+        JPanel placeHolder = new JPanel();
+        placeHolder.setPreferredSize(new Dimension(getWidth(), 150));
+        placeHolder.setBackground(Pallet.BACKGROUND.value());
+        add(placeHolder, BorderLayout.SOUTH);
 
         removeDefaultText();
-
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setPreferredSize(new Dimension(getWidth(), 150));
-        buttonPanel.setBackground(Pallet.BACKGROUND.value());
-        add(buttonPanel, BorderLayout.SOUTH);
-
-        connect = new JButton("Connect");
-        addFormattedFont(connect);
-        buttonPanel.add(connect);
-
-        connectToServer();
+        addKeyboardListeners();
     }
 
     private static void addFormattedFont(Component component) {
@@ -82,7 +77,7 @@ public class ConnectionPanel extends JPanel {
             public void mouseClicked(MouseEvent e) {
                 if (userName.getText().equals("here")) userName.setText("");
                 if (hostId.getText().isEmpty()) hostId.setText("here");
-                if (port.getText().isEmpty()) port.setText("here");
+                if (hostPort.getText().isEmpty()) hostPort.setText("here");
             }
         });
 
@@ -90,29 +85,53 @@ public class ConnectionPanel extends JPanel {
             public void mouseClicked(MouseEvent e) {
                 if (hostId.getText().equals("here")) hostId.setText("");
                 if (userName.getText().isEmpty()) userName.setText("here");
-                if (port.getText().isEmpty()) port.setText("here");
+                if (hostPort.getText().isEmpty()) hostPort.setText("here");
             }
         });
 
-        port.addMouseListener(new MouseAdapter() {
+        hostPort.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
-                if (port.getText().equals("here")) port.setText("");
+                if (hostPort.getText().equals("here")) hostPort.setText("");
                 if (userName.getText().isEmpty()) userName.setText("here");
                 if (hostId.getText().isEmpty()) hostId.setText("here");
             }
         });
     }
 
-    private void connectToServer() {
-        connect.addActionListener(e -> {
-            if (userName != null && hostId != null && port != null) {
-                if (!hostId.getText().equals("here") && !hostId.getText().equals("here")) {
-                    client.setUserName(userName.getText());
-                    if (client.connect(hostId.getText(), Integer.parseInt(port.getText()))) {
-                        client.getViewManager().showGamePanel();
-                    }
+    private void addKeyboardListeners() {
+        userName.addKeyListener(new KeyAdapter() {
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    connectToServer();
                 }
             }
         });
+        hostId.addKeyListener(new KeyAdapter() {
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    connectToServer();
+                }
+            }
+        });
+        hostPort.addKeyListener(new KeyAdapter() {
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    connectToServer();
+                }
+            }
+        });
+
+    }
+
+    private void connectToServer() {
+        if (userName != null && hostId != null && hostPort != null) {
+            if (!hostId.getText().equals("here") && !hostId.getText().equals("here")) {
+                client.setUserName(userName.getText());
+                if (client.connect(hostId.getText(), Integer.parseInt(hostPort.getText()))) {
+                    client.getViewManager().showGamePanel();
+                }
+            }
+        }
+
     }
 }

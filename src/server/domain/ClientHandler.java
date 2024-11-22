@@ -14,7 +14,7 @@ public class ClientHandler implements Runnable {
     private PrintWriter out;
     private BufferedReader in;
 
-    private final String clientName;
+    private String clientName;
     private final int clientPort;
 
     ClientHandler(GameServer server, Socket clientSocket) {
@@ -38,6 +38,7 @@ public class ClientHandler implements Runnable {
 
     @Override
     public void run() {
+        handleClientConnection();
         try {
             String message;
             while ((message = in.readLine()) != null) {
@@ -49,6 +50,18 @@ public class ClientHandler implements Runnable {
         } finally {
             disconnect();
         }
+    }
+
+    public void handleClientConnection() {
+        while (server.clientHasRepeatingName(this)) {
+            server.sendChangeNameMessage(this);
+            try {
+                this.clientName = in.readLine();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        server.startClient(this);
     }
 
     public void respond(StringBuilder message) {

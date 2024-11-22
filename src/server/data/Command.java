@@ -54,7 +54,7 @@ public enum Command {
             server.sendClientList(sender);
         }
     },
-    BAN("/banWords") {
+    BAN("/ban") {
         @Override
         public void execute(GameServer server, ClientHandler sender, StringBuilder message) {
             server.sendBannedList(sender);

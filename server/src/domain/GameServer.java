@@ -1,7 +1,7 @@
-package server.domain;
+package domain;
 
-import server.data.ChatMessage;
-import server.data.Command;
+import data.ChatMessage;
+import data.Command;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -78,7 +78,7 @@ public class GameServer {
             for (ClientHandler client : clients) {
                 if (client == sender) {
                     sender.getOut().println(formatMessage(
-                                    "/Client",
+                                    "/client",
                                     "Me",
                                     message.toString()
                             )
@@ -92,7 +92,7 @@ public class GameServer {
                         )
                 );
             }
-            addMessageToHistory("/Client", sender.getClientName(), message.toString());
+            addMessageToHistory("/client", sender.getClientName(), message.toString());
         }
     }
 
@@ -106,7 +106,7 @@ public class GameServer {
             for (ClientHandler client : clients) {
                 if (client == sender) {
                     sender.getOut().println(formatMessage(
-                                    "/Client",
+                                    "/client",
                                     "Me",
                                     message.toString()
                             )
@@ -115,7 +115,7 @@ public class GameServer {
                 }
                 if (clientNames.contains(client.getClientName())) {
                     client.getOut().println(formatMessage(
-                                    "/Client",
+                                    "/client",
                                      "(Personal) " + sender.getClientName(),
                                     message.toString()
                             )
@@ -135,7 +135,7 @@ public class GameServer {
             for (ClientHandler client : clients) {
                 if (client == sender) {
                     sender.getOut().println(formatMessage(
-                                    "/Client",
+                                    "/client",
                                     "Me",
                                     message.toString()
                             )
@@ -144,7 +144,7 @@ public class GameServer {
                 }
                 if (clientNames.contains(client.getClientName())) continue;
                 client.getOut().println(formatMessage(
-                                "/Client",
+                                "/client",
                                 "(Personal) " + sender.getClientName(),
                                 message.toString()
                         )
@@ -161,7 +161,7 @@ public class GameServer {
                 if (client != clients.getLast()) clientNames.append(", ");
             }
             sender.getOut().println(formatMessage(
-                            "/Server",
+                            "/server",
                             serverName,
                             "[" + clientNames + "]"
                     )
@@ -171,24 +171,21 @@ public class GameServer {
 
     public void sendHelpList(ClientHandler sender) {
         synchronized (clients) {
-            StringBuilder commandList = new StringBuilder();
             for (Command cmd : Command.values()) {
-                commandList.append(cmd.getCommand());
-                if (cmd != Command.values()[Command.values().length - 1]) commandList.append(", ");
+                sender.getOut().println(formatMessage(
+                                "/help",
+                                serverName,
+                                cmd.getDescription()
+                        )
+                );
             }
-            sender.getOut().println(formatMessage(
-                            "/Server",
-                            serverName,
-                            "[" + commandList + "]"
-                    )
-            );
         }
     }
 
     public void sendBannedPhrasesList(ClientHandler sender) {
         synchronized (clients) {
             sender.getOut().println(formatMessage(
-                            "/Server",
+                            "/ban",
                             serverName,
                             bannedPhrases.toString()
                     )
@@ -200,13 +197,13 @@ public class GameServer {
         synchronized (clients) {
             for (ClientHandler client : clients) {
                 client.getOut().println(formatMessage(
-                                "/Server",
+                                "/server",
                                 serverName,
                                 "client " + sender.getClientName() + " connected"
                         )
                 );
             }
-            addMessageToHistory("/Server", serverName, "client " + sender.getClientName() + " connected");
+            addMessageToHistory("/server", serverName, "client " + sender.getClientName() + " connected");
         }
     }
 
@@ -214,13 +211,13 @@ public class GameServer {
         synchronized (clients) {
             for (ClientHandler client : clients) {
                 client.getOut().println(formatMessage(
-                                "/Server",
+                                "/server",
                                 serverName,
                                 "client " + sender.getClientName() + " disconnected"
                         )
                 );
             }
-            addMessageToHistory("/Server", serverName, "client " + sender.getClientName() + " disconnected");
+            addMessageToHistory("/server", serverName, "client " + sender.getClientName() + " disconnected");
         }
     }
 
@@ -236,7 +233,7 @@ public class GameServer {
     public void sendUnknownCommandMessage(ClientHandler sender) {
         synchronized (clients) {
             sender.getOut().println(formatMessage(
-                            "/Server",
+                            "/server",
                             serverName,
                             "Unknown command, for more info use " + Command.HELP.getCommand()
                     )
@@ -247,7 +244,7 @@ public class GameServer {
     public void sendIncorrectSyntaxMessage(ClientHandler sender) {
         synchronized (clients) {
             sender.getOut().println(formatMessage(
-                            "/Server",
+                            "/server",
                             serverName,
                             "Incorrect syntax, for more info use " + Command.HELP.getCommand()
                     )
@@ -259,7 +256,7 @@ public class GameServer {
     public void sendContainsBannedPhraseMessage(ClientHandler sender, String bannedPhrase) {
         synchronized (clients) {
             sender.getOut().println(formatMessage(
-                            "/Server",
+                            "/server",
                             serverName,
                             "Your message contains banned phrase \"" + bannedPhrase + "\", " +
                                      "for more info use " + Command.BAN.getCommand()
@@ -270,7 +267,7 @@ public class GameServer {
 
     public void sendChangeNameMessage(ClientHandler client) {
         client.getOut().println(formatMessage(
-                        "/Server",
+                        "/server",
                         serverName,
                         "Your username is already in use, please use another one"
                 )

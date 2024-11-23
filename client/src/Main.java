@@ -1,6 +1,4 @@
-package client;
-
-import client.domain.GameClient;
+import domain.GameClient;
 
 import javax.swing.*;
 

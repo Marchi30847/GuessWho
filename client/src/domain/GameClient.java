@@ -1,15 +1,17 @@
-package client.domain;
+package domain;
 
-import client.data.Pallet;
-import client.ui.ChatPanel;
-import client.ui.ConnectionPanel;
-import client.ui.ViewManager;
-import client.data.Command;
+import ui.ChatPanel;
+import ui.ConnectionPanel;
+import ui.ViewManager;
+import data.Command;
 
+import java.awt.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.ConnectException;
+import java.net.NoRouteToHostException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
@@ -40,6 +42,7 @@ public class GameClient implements Runnable {
                 System.err.println("I/O Exception: " + e.getMessage());
             }
         }
+        disconnect();
     }
 
     public boolean connect(String host, String port) {
@@ -50,28 +53,36 @@ public class GameClient implements Runnable {
             new Thread(this).start();
             out.println(userName);
             return true;
-        } catch (UnknownHostException e) {
-            System.err.println("Unknown host: " + host);
-            getConnectionPanel().setIncorrectHostName();
         } catch (NumberFormatException e) {
             System.err.println("Not a number: " + e.getMessage());
             getConnectionPanel().setIncorrectHostPort();
+        } catch (NoRouteToHostException e) {
+            System.err.println("Unable to reach the specified host: " + e.getMessage());
+            getConnectionPanel().setIncorrectHostName();
+        } catch (UnknownHostException e) {
+            System.err.println("Unknown host: " + e.getMessage());
+            getConnectionPanel().setIncorrectHostName();
+        } catch (ConnectException e) {
+            System.err.println("Server listens to a different port: " + e.getMessage());
+            getConnectionPanel().setIncorrectHostPort();
         } catch (IOException e) {
             System.err.println("I/O exception: " + e.getMessage());
-            switch (e.getMessage()) {
-                case "No route to host" -> getConnectionPanel().setIncorrectHostName();
-                case "Connection refused" -> getConnectionPanel().setIncorrectHostPort();
-                default -> {
-                    getConnectionPanel().setIncorrectHostName();
-                    getConnectionPanel().setIncorrectHostPort();
-                }
-            }
+            getConnectionPanel().setIncorrectHostName();
+            getConnectionPanel().setIncorrectHostPort();
         }
         return false;
     }
 
-    public void sendMessageToServer(String message) {
-        out.println(message);
+    private void disconnect() {
+        try {
+            if (in != null) in.close();
+            if (out != null) out.close();
+            if (socket != null) socket.close();
+            System.out.println("Client " + userName + " disconnected.");
+        } catch (IOException e) {
+            System.err.println("Error closing connection for client: " + userName);
+        }
+
     }
 
     public void respond(StringBuilder command, StringBuilder sender, StringBuilder message) {
@@ -80,15 +91,14 @@ public class GameClient implements Runnable {
         }
     }
 
-    public void handleServerMessage(StringBuilder sender, StringBuilder message) {
-        getChatPanel().addMessage(sender, message,
-                Pallet.SERVER.value(), Pallet.MESSAGE.value());
+    public void sendMessageToServer(String message) {
+        out.println(message);
     }
 
-    public void handleClientMessage(StringBuilder sender, StringBuilder message) {
-        getChatPanel().addMessage(sender, message,
-                Pallet.CLIENT.value(), Pallet.MESSAGE.value());
+    public void handleMessage(StringBuilder sender, StringBuilder message, Color senderColor, Color messageColor) {
+        getChatPanel().addMessage(sender, message, senderColor, messageColor);
     }
+
 
     public String getUserName() {return userName;}
     public ViewManager getViewManager() {return viewManager;}

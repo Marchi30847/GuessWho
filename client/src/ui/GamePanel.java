@@ -1,7 +1,7 @@
-package client.ui;
+package ui;
 
-import client.data.Pallet;
-import client.domain.GameClient;
+import data.Pallet;
+import domain.GameClient;
 
 import javax.swing.*;
 import java.awt.*;
@@ -30,7 +30,7 @@ public class GamePanel extends JPanel {
         thisClient.setBackground(Pallet.BACKGROUND.value());
 
         this.chatPanel = new ChatPanel(client, new Dimension(size.width / 2, size.height - clientPanelHeight * 2));
-        this.votePanel = new VotePanel(new Dimension(size.width / 2, size.height - clientPanelHeight * 2));
+        this.votePanel = new VotePanel(client, new Dimension(size.width / 2, size.height - clientPanelHeight * 2));
 
         this.add(otherClient, BorderLayout.NORTH);
         this.add(chatPanel, BorderLayout.WEST);

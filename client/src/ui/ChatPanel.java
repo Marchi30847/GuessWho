@@ -1,7 +1,7 @@
-package client.ui;
+package ui;
 
-import client.data.Pallet;
-import client.domain.GameClient;
+import data.Pallet;
+import domain.GameClient;
 
 import javax.swing.*;
 import javax.swing.text.BadLocationException;
@@ -23,7 +23,6 @@ public class ChatPanel extends JPanel {
         this.client = client;
         this.setPreferredSize(size);
         this.setLayout(new BorderLayout());
-        this.setBackground(Color.WHITE);
 
         this.chatBody = new JTextPane();
         this.chatBody.setBackground(Pallet.CHAT.value());

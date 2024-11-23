@@ -1,6 +1,6 @@
-package server.domain;
+package domain;
 
-import server.data.Command;
+import data.Command;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -32,7 +32,7 @@ public class ClientHandler implements Runnable {
         try {
             clientName = in.readLine();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.err.println(e.getMessage());
         }
     }
 
@@ -58,7 +58,7 @@ public class ClientHandler implements Runnable {
             try {
                 this.clientName = in.readLine();
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                System.err.println(e.getMessage());
             }
         }
         server.addClient(this);
@@ -88,7 +88,6 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             System.err.println("Error closing connection for client: " + clientName);
         }
-
     }
 
     public String getClientName() {return clientName;}

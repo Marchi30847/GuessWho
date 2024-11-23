@@ -1,7 +1,7 @@
-package client.ui;
+package ui;
 
-import client.data.Pallet;
-import client.domain.GameClient;
+import data.Pallet;
+import domain.GameClient;
 
 import javax.swing.*;
 import java.awt.*;

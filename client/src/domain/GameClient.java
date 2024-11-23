@@ -56,19 +56,19 @@ public class GameClient implements Runnable {
         } catch (NumberFormatException e) {
             System.err.println("Not a number: " + e.getMessage());
             getConnectionPanel().setIncorrectHostPort();
+        } catch (ConnectException e) {
+            System.err.println("Server listens to a different port: " + e.getMessage());
+            getConnectionPanel().setIncorrectHostPort();
         } catch (NoRouteToHostException e) {
             System.err.println("Unable to reach the specified host: " + e.getMessage());
             getConnectionPanel().setIncorrectHostName();
         } catch (UnknownHostException e) {
             System.err.println("Unknown host: " + e.getMessage());
             getConnectionPanel().setIncorrectHostName();
-        } catch (ConnectException e) {
-            System.err.println("Server listens to a different port: " + e.getMessage());
-            getConnectionPanel().setIncorrectHostPort();
         } catch (IOException e) {
             System.err.println("I/O exception: " + e.getMessage());
-            getConnectionPanel().setIncorrectHostName();
             getConnectionPanel().setIncorrectHostPort();
+            getConnectionPanel().setIncorrectHostName();
         }
         return false;
     }

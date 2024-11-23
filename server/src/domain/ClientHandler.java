@@ -17,6 +17,9 @@ public class ClientHandler implements Runnable {
     private String clientName;
     private final int clientPort;
 
+    private String givenWord;
+    private boolean voted = false;
+
     ClientHandler(GameServer server, Socket clientSocket) {
         this.server = server;
         this.clientSocket = clientSocket;
@@ -91,7 +94,13 @@ public class ClientHandler implements Runnable {
     }
 
     public String getClientName() {return clientName;}
+    public String getGivenWord() {return givenWord;}
     public int getClientPort() {return clientPort;}
     public PrintWriter getOut() {return out;}
     public BufferedReader getIn() {return in;}
+
+
+    public boolean hasVoted() {return voted;}
+    public void setVoted(boolean voted) {this.voted = voted;}
+    public void setGivenWord(String givenWord) {this.givenWord = givenWord;}
 }

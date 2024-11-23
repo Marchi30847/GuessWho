@@ -42,7 +42,7 @@ public enum Command {
         }
 
         private void removePrefix(StringBuilder message) {
-            message.delete(0, message.toString().indexOf(']') + 1);
+            message.delete(0, message.toString().indexOf(']') + 2);
         }
     },
     EXCEPT("/except ") {
@@ -63,7 +63,7 @@ public enum Command {
         }
 
         private void removePrefix(StringBuilder message) {
-            message.delete(0, message.toString().indexOf(']') + 1);
+            message.delete(0, message.toString().indexOf(']') + 2);
         }
     },
     LIST("/list") {
@@ -100,6 +100,60 @@ public enum Command {
         public String getDescription() {
             return "/help: " +
                     "Provides a list of all available commands with their descriptions.";
+        }
+    }, GIVE("/give ") {
+        @Override
+        public void execute(GameServer server, ClientHandler sender, StringBuilder message) {
+            ArrayList<String> clientNames = extractClientNames(message);
+            if (clientNames == null || clientNames.size() != 1) server.sendIncorrectSyntaxMessage(sender);
+            else {
+                removePrefix(message);
+                server.sendGiveAWordMessage(sender, clientNames.getFirst(), message);
+            }
+        }
+
+        @Override
+        public String getDescription() {
+            return "/give [client] word: " +
+                    "Gives a word to the specified client.";
+        }
+
+        private void removePrefix(StringBuilder message) {
+            message.delete(0, message.toString().indexOf(']') + 2);
+        }
+    },
+    VOTE("/vote ") {
+        @Override
+        public void execute(GameServer server, ClientHandler sender, StringBuilder message) {
+            removePrefix(message);
+            server.addVoteFor(sender, message.toString());
+        }
+
+        @Override
+        public String getDescription() {
+            return "/vote option: " +
+                    "Adds a vote for a specified option (YES, NO, IDK).";
+        }
+
+        private void removePrefix(StringBuilder message) {
+            message.delete(0, this.getCommand().length());
+        }
+    },
+    ASK("/ask ") {
+        @Override
+        public void execute(GameServer server, ClientHandler sender, StringBuilder message) {
+            removePrefix(message);
+            server.sendQuestionMessage(sender, message);
+        }
+
+        @Override
+        public String getDescription() {
+            return "/ask question: " +
+                    "Raises a question if it is your turn";
+        }
+
+        private void removePrefix(StringBuilder message) {
+            message.delete(0, this.getCommand().length());
         }
     };
 

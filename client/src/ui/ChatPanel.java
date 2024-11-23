@@ -21,19 +21,19 @@ public class ChatPanel extends JPanel {
 
     public ChatPanel(GameClient client, Dimension size) {
         this.client = client;
-        this.setPreferredSize(size);
-        this.setLayout(new BorderLayout());
+        setPreferredSize(size);
+        setLayout(new BorderLayout());
 
-        this.chatBody = new JTextPane();
-        this.chatBody.setBackground(Pallet.CHAT.value());
-        this.chatBody.setEditable(false);
+        chatBody = new JTextPane();
+        chatBody.setBackground(Pallet.CHAT.value());
+        chatBody.setEditable(false);
 
-        this.clientMessage = new JTextField();
-        this.clientMessage.setPreferredSize(new Dimension(size.width, 50));
-        this.clientMessage.setBackground(Pallet.CHAT.value());
-        this.clientMessage.setForeground(Pallet.MESSAGE.value());
-        this.clientMessage.setFocusable(true);
-        this.clientMessage.addKeyListener(new KeyAdapter() {
+        clientMessage = new JTextField();
+        clientMessage.setPreferredSize(new Dimension(size.width, 50));
+        clientMessage.setBackground(Pallet.CHAT.value());
+        clientMessage.setForeground(Pallet.MESSAGE.value());
+        clientMessage.setFocusable(true);
+        clientMessage.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER && !clientMessage.getText().isEmpty()) {
@@ -43,11 +43,11 @@ public class ChatPanel extends JPanel {
             }
         });
 
-        this.scrollPane = new JScrollPane(chatBody);
-        this.scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane = new JScrollPane(chatBody);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 
-        this.add(this.scrollPane, BorderLayout.CENTER);
-        this.add(this.clientMessage, BorderLayout.SOUTH);
+        add(scrollPane, BorderLayout.CENTER);
+        add(clientMessage, BorderLayout.SOUTH);
     }
 
     public void addMessage(StringBuilder sender, StringBuilder message, Color senderColor, Color messageColor) {

@@ -6,9 +6,7 @@ import data.Command;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 public class GameServer {
     private ServerSocket serverSocket;
@@ -18,6 +16,11 @@ public class GameServer {
     private final List<String> bannedPhrases = new ArrayList<>();
     private final List<ClientHandler> clients = new LinkedList<>();
     private final ArrayList<ChatMessage> chatHistory = new ArrayList<>();
+
+    private ClientHandler currentTurn;
+    private int currentClientIndex;
+
+    private final Map<String, Integer> votes = new HashMap<>();
 
     public GameServer(String configPath) {
         try {
@@ -31,6 +34,10 @@ public class GameServer {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
+        votes.put("YES", 0);
+        votes.put("NO", 0);
+        votes.put("IDK", 0);
     }
 
     public void start() {
@@ -45,10 +52,16 @@ public class GameServer {
                 Socket socket = serverSocket.accept();
                 ClientHandler client = new ClientHandler(this, socket);
                 new Thread(client).start();
+                if (clients.size() == 2) startGame();
             } catch (IOException e) {
                 System.err.println("Accept failed");
             }
         }
+    }
+
+    private void startGame() {
+        currentClientIndex = 0;
+        currentTurn = clients.get(currentClientIndex);
     }
 
     public void addClient(ClientHandler client) {
@@ -86,7 +99,7 @@ public class GameServer {
                     continue;
                 }
                 client.getOut().println(formatMessage(
-                                "/Client",
+                                "/client",
                                 sender.getClientName(),
                                 message.toString()
                         )
@@ -265,14 +278,157 @@ public class GameServer {
         }
     }
 
-    public void sendChangeNameMessage(ClientHandler client) {
-        client.getOut().println(formatMessage(
-                        "/server",
-                        serverName,
-                        "Your username is already in use, please use another one"
-                )
-        );
+    public void sendChangeNameMessage(ClientHandler sender) {
+        synchronized (clients) {
+            sender.getOut().println(formatMessage(
+                            "/server",
+                            serverName,
+                            "Your username is already in use, please use another one"
+                    )
+            );
+        }
     }
+
+
+
+
+
+
+
+
+
+
+
+    public void sendSuccessfullyVotedMessage(ClientHandler sender, String option) {
+        synchronized (clients) {
+            sender.getOut().println(formatMessage(
+                            "/voted",
+                            serverName,
+                            "You successfully voted for " + option
+                    )
+            );
+        }
+    }
+
+    public void sendAlreadyVotedMessage(ClientHandler sender) {
+        synchronized (clients) {
+            sender.getOut().println(formatMessage(
+                            "/server",
+                            serverName,
+                            "You have already voted"
+                    )
+            );
+        }
+    }
+
+    //add sync on currentTurn
+    //perhaps add to the history
+    public void sendQuestionMessage(ClientHandler sender, StringBuilder question) {
+        if (currentTurn != sender) {
+            sendWaitForYourTurnMessage(sender);
+            return;
+        }
+        synchronized (clients) {
+            for (ClientHandler client : clients) {
+                if (client == sender) {
+                    sender.getOut().println(formatMessage(
+                                    "/question",
+                                    "Me",
+                                    question.toString()
+                            )
+                    );
+                    continue;
+                }
+                client.getOut().println(formatMessage(
+                                "/question",
+                                sender.getClientName(),
+                                question.toString()
+                        )
+                );
+            }
+        }
+    }
+
+    public void sendWaitForYourTurnMessage(ClientHandler sender) {
+        synchronized (clients) {
+            sender.getOut().println(formatMessage(
+                            "/server",
+                            serverName,
+                            "Wait for your turn"
+                    )
+            );
+        }
+    }
+
+    public void sendAnswerForAQuestionMessage(ClientHandler sender) {
+        String answer = "";
+        synchronized (votes) {
+            int maxVotes = 0;
+            for (String key : votes.keySet()) {
+                if (votes.get(key) > maxVotes) maxVotes = votes.get(key);
+            }
+            for (String key : votes.keySet()) {
+                if (votes.get(key) == maxVotes) {
+                    answer = key;
+                    break;
+                }
+            }
+        }
+
+        synchronized (clients) {
+            sender.getOut().println(formatMessage(
+                            "/server",
+                            serverName,
+                            "The answer for your question is " + answer
+                    )
+            );
+        }
+    }
+
+    public void sendYourTurnMessage(ClientHandler sender) {
+        synchronized (clients) {
+            sender.getOut().println(formatMessage(
+                            "/server",
+                            serverName,
+                            "It's your turn to ask questions"
+                    )
+            );
+        }
+    }
+
+    public void sendGiveAWordMessage(ClientHandler sender, String receiver, StringBuilder word) {
+        if (sender.getClientName().equals(receiver)) {}
+        synchronized (clients) {
+            for (ClientHandler client : clients) {
+                if (client.getClientName().equals(receiver)) {
+                    sender.getOut().println(formatMessage(
+                                    "/server",
+                                    serverName,
+                                    "You are given a word " + word.toString() +
+                                            " by " + sender.getClientName()
+                            )
+                    );
+                    continue;
+                }
+                sender.getOut().println(formatMessage(
+                                "/server",
+                                serverName,
+                                sender.getClientName() + "gives a word " + word.toString() +
+                                        " to " + receiver
+                        )
+                );
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
 
 
     private String formatMessage(String command, String sender, String message) {
@@ -301,6 +457,81 @@ public class GameServer {
     private void addMessageToHistory(String command, String sender, String message) {
         synchronized (chatHistory) {
             chatHistory.add(new ChatMessage(command, sender, message));
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    //handle a case when someone leaves during a voting process
+    public void addVoteFor(ClientHandler sender, String option) {
+        if (sender.hasVoted()) {
+            sendAlreadyVotedMessage(sender);
+            return;
+        }
+        if (clients.size() < 2) return;
+        if (sender == currentTurn) return;
+
+        if (votes.containsKey(option)) {
+            synchronized (votes) {
+                votes.put(option, votes.get(option) + 1);
+            }
+            sender.setVoted(true);
+            sendSuccessfullyVotedMessage(sender, option);
+        } else {
+            sendIncorrectSyntaxMessage(sender);
+        }
+    }
+
+    private void checkGameState(ClientHandler sender) {
+        if (everyOneHasWord()) {
+            if (everyOneVoted()) {
+                sendAnswerForAQuestionMessage(sender);
+                resetVotes();
+                switchTurn();
+                sendYourTurnMessage(currentTurn);
+            }
+        } else {
+
+        }
+    }
+
+    private boolean everyOneVoted() {
+        synchronized (clients) {
+            for (ClientHandler client : clients) {
+                if (client == currentTurn) continue;
+                if (!client.hasVoted()) return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean everyOneHasWord() {
+        synchronized (clients) {
+            for (ClientHandler client : clients) {
+                if (client.getGivenWord() == null) return false;
+            }
+        }
+        return true;
+    }
+
+    private void resetVotes() {
+        synchronized (votes) {
+            for (String option : votes.keySet()) {
+                votes.put(option, 0);
+            }
+        }
+    }
+    private void switchTurn() {
+        synchronized (clients) {
+            currentClientIndex = (currentClientIndex + 1) % clients.size();
+            currentTurn = clients.get(currentClientIndex);
         }
     }
 }

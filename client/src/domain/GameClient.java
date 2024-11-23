@@ -4,6 +4,7 @@ import ui.ChatPanel;
 import ui.ConnectionPanel;
 import ui.ViewManager;
 import data.Command;
+import ui.VotePanel;
 
 import java.awt.*;
 import java.io.BufferedReader;
@@ -95,8 +96,12 @@ public class GameClient implements Runnable {
         out.println(message);
     }
 
-    public void handleMessage(StringBuilder sender, StringBuilder message, Color senderColor, Color messageColor) {
+    public void handleMessageChat(StringBuilder sender, StringBuilder message, Color senderColor, Color messageColor) {
         getChatPanel().addMessage(sender, message, senderColor, messageColor);
+    }
+
+    public void handleMessageVote(StringBuilder word, StringBuilder question, Color wordColor, Color questionColor) {
+        getVotePanel().setQuestion(word, question, wordColor, questionColor);
     }
 
 
@@ -104,5 +109,6 @@ public class GameClient implements Runnable {
     public ViewManager getViewManager() {return viewManager;}
     public ChatPanel getChatPanel() {return viewManager.getGamePanel().getChatPanel();}
     public ConnectionPanel getConnectionPanel() {return viewManager.getConnectionPanel();}
+    public VotePanel getVotePanel() {return viewManager.getGamePanel().getVotePanel();}
     public void setUserName(String userName) {this.userName = userName;}
 }

@@ -26,10 +26,8 @@ public class ConnectionPanel extends JPanel {
         addFormattedFont(titleLabel);
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
         titleLabel.setPreferredSize(new Dimension(getWidth(), 150));
-        add(titleLabel, BorderLayout.NORTH);
 
         JPanel inputPanel = new JPanel();
-        add(inputPanel, BorderLayout.CENTER);
         inputPanel.setLayout(new GridLayout(6, 1, 10, 10));
         inputPanel.setBackground(Pallet.BACKGROUND.value());
         inputPanel.setBorder(BorderFactory.createEmptyBorder(20, 50, 20, 50));
@@ -61,10 +59,13 @@ public class ConnectionPanel extends JPanel {
         JPanel placeHolder = new JPanel();
         placeHolder.setPreferredSize(new Dimension(getWidth(), 150));
         placeHolder.setBackground(Pallet.BACKGROUND.value());
-        add(placeHolder, BorderLayout.SOUTH);
 
         removeDefaultText();
         addKeyboardListeners();
+
+        add(titleLabel, BorderLayout.NORTH);
+        add(inputPanel, BorderLayout.CENTER);
+        add(placeHolder, BorderLayout.SOUTH);
     }
 
     private static void addFormattedFont(Component component) {
@@ -134,10 +135,6 @@ public class ConnectionPanel extends JPanel {
         }
     }
 
-    public void setIncorrectHostName() {
-        hostName.setText("Enter a valid host name");
-    }
-    public void setIncorrectHostPort() {
-        hostPort.setText("Enter a valid host port");
-    }
+    public void setIncorrectHostName() {hostName.setText("Enter a valid host name");}
+    public void setIncorrectHostPort() {hostPort.setText("Enter a valid host port");}
 }

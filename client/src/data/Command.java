@@ -6,25 +6,38 @@ public enum Command {
     SERVER("/server") {
         @Override
         public void execute(GameClient client, StringBuilder sender, StringBuilder message) {
-            client.handleMessage(sender, message, Pallet.SERVER.value(), Pallet.MESSAGE.value());
+            client.handleMessageChat(sender, message, Pallet.SERVER.value(), Pallet.MESSAGE.value());
         }
     },
     CLIENT("/client") {
         @Override
         public void execute(GameClient client, StringBuilder sender, StringBuilder message) {
-            client.handleMessage(sender, message, Pallet.CLIENT.value(), Pallet.MESSAGE.value());
+            client.handleMessageChat(sender, message, Pallet.CLIENT.value(), Pallet.MESSAGE.value());
         }
     },
     HELP("/help") {
         @Override
         public void execute(GameClient client, StringBuilder sender, StringBuilder message) {
-            client.handleMessage(sender, message, Pallet.SERVER.value(), Pallet.HELP.value());
+            client.handleMessageChat(sender, message, Pallet.SERVER.value(), Pallet.HELP.value());
         }
     },
     BAN("/ban") {
         @Override
         public void execute(GameClient client, StringBuilder sender, StringBuilder message) {
-            client.handleMessage(sender, message, Pallet.SERVER.value(), Pallet.BAN.value());
+            client.handleMessageChat(sender, message, Pallet.SERVER.value(), Pallet.BAN.value());
+        }
+    },
+    VOTE("/voted") {
+        @Override
+        public void execute(GameClient client, StringBuilder sender, StringBuilder message) {
+            client.handleMessageChat(sender, message, Pallet.SERVER.value(), Pallet.VOTE.value());
+        }
+    },
+    QUESTION("/question") {
+        @Override
+        public void execute(GameClient client, StringBuilder sender, StringBuilder message) {
+            client.handleMessageChat(sender, message, Pallet.SERVER.value(), Pallet.QUESTION.value());
+            client.handleMessageVote(sender, message, Pallet.SERVER.value(), Pallet.QUESTION.value());
         }
     };
 

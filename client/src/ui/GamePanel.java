@@ -17,7 +17,7 @@ public class GamePanel extends JPanel {
 
     public GamePanel(GameClient client, Dimension size) {
         this.client = client;
-        this.setPreferredSize(size);
+        setPreferredSize(size);
         setLayout(new BorderLayout());
 
         int clientPanelHeight = 200;
@@ -29,14 +29,15 @@ public class GamePanel extends JPanel {
         thisClient.setPreferredSize(new Dimension(size.width, clientPanelHeight));
         thisClient.setBackground(Pallet.BACKGROUND.value());
 
-        this.chatPanel = new ChatPanel(client, new Dimension(size.width / 2, size.height - clientPanelHeight * 2));
-        this.votePanel = new VotePanel(client, new Dimension(size.width / 2, size.height - clientPanelHeight * 2));
+        chatPanel = new ChatPanel(client, new Dimension(size.width / 2, size.height - clientPanelHeight * 2));
+        votePanel = new VotePanel(client, new Dimension(size.width / 2, size.height - clientPanelHeight * 2));
 
-        this.add(otherClient, BorderLayout.NORTH);
-        this.add(chatPanel, BorderLayout.WEST);
-        this.add(votePanel, BorderLayout.EAST);
-        this.add(thisClient, BorderLayout.SOUTH);
+        add(otherClient, BorderLayout.NORTH);
+        add(chatPanel, BorderLayout.WEST);
+        add(votePanel, BorderLayout.EAST);
+        add(thisClient, BorderLayout.SOUTH);
     }
 
     public ChatPanel getChatPanel() {return chatPanel;}
+    public VotePanel getVotePanel() {return votePanel;}
 }

@@ -15,7 +15,7 @@ public class GameServer {
     private final int port;
     private final String serverName;
 
-    private final List<String> bannedWords = new ArrayList<>();
+    private final List<String> bannedPhrases = new ArrayList<>();
     private final List<ClientHandler> clients = new LinkedList<>();
     private final ArrayList<ChatMessage> chatHistory = new ArrayList<>();
 
@@ -24,9 +24,9 @@ public class GameServer {
             BufferedReader configReader = new BufferedReader(new FileReader(configPath));
             port = Integer.parseInt(configReader.readLine());
             serverName = configReader.readLine();
-            String bannedWord;
-            while ((bannedWord = configReader.readLine()) != null) {
-                bannedWords.add(bannedWord);
+            String bannedPhrase;
+            while ((bannedPhrase = configReader.readLine()) != null) {
+                bannedPhrases.add(bannedPhrase);
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -51,7 +51,7 @@ public class GameServer {
         }
     }
 
-    public void startClient(ClientHandler client) {
+    public void addClient(ClientHandler client) {
         synchronized (clients) {
             clients.add(client);
             sendChatHistory(client);
@@ -70,8 +70,9 @@ public class GameServer {
 
     public void sendMessageToAllClients(ClientHandler sender, StringBuilder message) {
         synchronized (clients) {
-            if (containsBannedWord(message.toString())) {
-                sendContainsBannedWordMessage(sender);
+            String bannedPhrase = containsBannedPhrase(message.toString());
+            if (bannedPhrase != null) {
+                sendContainsBannedPhraseMessage(sender, bannedPhrase);
                 return;
             }
             for (ClientHandler client : clients) {
@@ -91,14 +92,15 @@ public class GameServer {
                         )
                 );
             }
-            addMessage("/Client", sender.getClientName(), message.toString());
+            addMessageToHistory("/Client", sender.getClientName(), message.toString());
         }
     }
 
     public void sendMessageToClients(ClientHandler sender, ArrayList<String> clientNames, StringBuilder message) {
         synchronized (clients) {
-            if (containsBannedWord(message.toString())) {
-                sendContainsBannedWordMessage(sender);
+            String bannedPhrase = containsBannedPhrase(message.toString());
+            if (bannedPhrase != null) {
+                sendContainsBannedPhraseMessage(sender, bannedPhrase);
                 return;
             }
             for (ClientHandler client : clients) {
@@ -125,8 +127,9 @@ public class GameServer {
 
     public void sendMessageExceptClients(ClientHandler sender, ArrayList<String> clientNames, StringBuilder message) {
         synchronized (clients) {
-            if (containsBannedWord(message.toString())) {
-                sendContainsBannedWordMessage(sender);
+            String bannedPhrase = containsBannedPhrase(message.toString());
+            if (bannedPhrase != null) {
+                sendContainsBannedPhraseMessage(sender, bannedPhrase);
                 return;
             }
             for (ClientHandler client : clients) {
@@ -182,12 +185,12 @@ public class GameServer {
         }
     }
 
-    public void sendBannedList(ClientHandler sender) {
+    public void sendBannedPhrasesList(ClientHandler sender) {
         synchronized (clients) {
             sender.getOut().println(formatMessage(
                             "/Server",
                             serverName,
-                            bannedWords.toString()
+                            bannedPhrases.toString()
                     )
             );
         }
@@ -203,7 +206,7 @@ public class GameServer {
                         )
                 );
             }
-            addMessage("/Server", serverName, "client " + sender.getClientName() + " connected");
+            addMessageToHistory("/Server", serverName, "client " + sender.getClientName() + " connected");
         }
     }
 
@@ -217,7 +220,7 @@ public class GameServer {
                         )
                 );
             }
-            addMessage("/Server", serverName, "client " + sender.getClientName() + " disconnected");
+            addMessageToHistory("/Server", serverName, "client " + sender.getClientName() + " disconnected");
         }
     }
 
@@ -253,12 +256,13 @@ public class GameServer {
         }
     }
 
-    public void sendContainsBannedWordMessage(ClientHandler sender) {
+    public void sendContainsBannedPhraseMessage(ClientHandler sender, String bannedPhrase) {
         synchronized (clients) {
             sender.getOut().println(formatMessage(
                             "/Server",
                             serverName,
-                            "Your message contains banned words, for more info use " + Command.BAN.getCommand()
+                            "Your message contains banned phrase \"" + bannedPhrase + "\", " +
+                                     "for more info use " + Command.BAN.getCommand()
                     )
             );
         }
@@ -282,13 +286,12 @@ public class GameServer {
         return chatMessage.command() + "\n" + chatMessage.sender() + "\n" + chatMessage.message();
     }
 
-    public boolean containsBannedWord(String message) {
+    public String containsBannedPhrase(String message) {
         message = message.toLowerCase();
-        String[] words = message.split(" ");
-        for (String word : words) {
-            if(bannedWords.contains(word)) return true;
+        for (String bannedPhrase : bannedPhrases) {
+            if(message.contains(bannedPhrase)) return bannedPhrase;
         }
-        return false;
+        return null;
     }
 
     public void removeClient(ClientHandler client) {
@@ -298,14 +301,9 @@ public class GameServer {
         }
     }
 
-    private void addMessage(String command, String sender, String message) {
+    private void addMessageToHistory(String command, String sender, String message) {
         synchronized (chatHistory) {
             chatHistory.add(new ChatMessage(command, sender, message));
         }
-    }
-
-    public static void main(String[] args) {
-        GameServer gameServer = new GameServer("src/server/data/ServerConfig.txt");
-        gameServer.start();
     }
 }

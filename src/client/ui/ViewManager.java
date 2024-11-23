@@ -43,4 +43,5 @@ public class ViewManager {
     }
 
     public GamePanel getGamePanel() {return gamePanel;}
+    public ConnectionPanel getConnectionPanel() {return connectionPanel;}
 }

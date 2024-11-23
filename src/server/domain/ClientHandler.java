@@ -61,7 +61,7 @@ public class ClientHandler implements Runnable {
                 throw new RuntimeException(e);
             }
         }
-        server.startClient(this);
+        server.addClient(this);
     }
 
     public void respond(StringBuilder message) {

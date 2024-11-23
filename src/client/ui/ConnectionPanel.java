@@ -14,7 +14,7 @@ public class ConnectionPanel extends JPanel {
     private final GameClient client;
 
     private final JTextField userName;
-    private final JTextField hostId;
+    private final JTextField hostName;
     private final JTextField hostPort;
 
     public ConnectionPanel(GameClient client) {
@@ -45,10 +45,10 @@ public class ConnectionPanel extends JPanel {
         JLabel hostIpLabel = new JLabel("Enter Host Ip: ");
         addFormattedFont(hostIpLabel);
         inputPanel.add(hostIpLabel);
-        hostId = new JTextField("here");
-        addFormattedFont(hostId);
-        hostId.setBackground(Pallet.BACKGROUND.value());
-        inputPanel.add(hostId);
+        hostName = new JTextField("here");
+        addFormattedFont(hostName);
+        hostName.setBackground(Pallet.BACKGROUND.value());
+        inputPanel.add(hostName);
 
         JLabel hostPortLabel = new JLabel("Enter Host Port: ");
         addFormattedFont(hostPortLabel);
@@ -76,14 +76,15 @@ public class ConnectionPanel extends JPanel {
         userName.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                 if (userName.getText().equals("here")) userName.setText("");
-                if (hostId.getText().isEmpty()) hostId.setText("here");
+                if (hostName.getText().isEmpty()) hostName.setText("here");
                 if (hostPort.getText().isEmpty()) hostPort.setText("here");
             }
         });
 
-        hostId.addMouseListener(new MouseAdapter() {
+        hostName.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
-                if (hostId.getText().equals("here")) hostId.setText("");
+                if (hostName.getText().equals("here") ||
+                    hostName.getText().equals("Enter a valid host name")) hostName.setText("");
                 if (userName.getText().isEmpty()) userName.setText("here");
                 if (hostPort.getText().isEmpty()) hostPort.setText("here");
             }
@@ -91,9 +92,10 @@ public class ConnectionPanel extends JPanel {
 
         hostPort.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
-                if (hostPort.getText().equals("here")) hostPort.setText("");
+                if (hostPort.getText().equals("here") ||
+                    hostPort.getText().equals("Enter a valid host port")) hostPort.setText("");
                 if (userName.getText().isEmpty()) userName.setText("here");
-                if (hostId.getText().isEmpty()) hostId.setText("here");
+                if (hostName.getText().isEmpty()) hostName.setText("here");
             }
         });
     }
@@ -106,7 +108,7 @@ public class ConnectionPanel extends JPanel {
                 }
             }
         });
-        hostId.addKeyListener(new KeyAdapter() {
+        hostName.addKeyListener(new KeyAdapter() {
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
                     connectToServer();
@@ -124,14 +126,18 @@ public class ConnectionPanel extends JPanel {
     }
 
     private void connectToServer() {
-        if (userName != null && hostId != null && hostPort != null) {
-            if (!hostId.getText().equals("here") && !hostId.getText().equals("here")) {
-                client.setUserName(userName.getText());
-                if (client.connect(hostId.getText(), Integer.parseInt(hostPort.getText()))) {
-                    client.getViewManager().showGamePanel();
-                }
+        if (userName != null && hostName != null && hostPort != null) {
+            client.setUserName(userName.getText());
+            if (client.connect(hostName.getText(), hostPort.getText())) {
+                client.getViewManager().showGamePanel();
             }
         }
+    }
 
+    public void setIncorrectHostName() {
+        hostName.setText("Enter a valid host name");
+    }
+    public void setIncorrectHostPort() {
+        hostPort.setText("Enter a valid host port");
     }
 }

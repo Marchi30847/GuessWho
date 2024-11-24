@@ -6,7 +6,7 @@ import domain.GameServer;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public enum Command {
+public enum ServerCommand {
     ALL("/all ") {
         @Override
         public void execute(GameServer server, ClientHandler sender, StringBuilder message) {
@@ -28,7 +28,7 @@ public enum Command {
         @Override
         public void execute(GameServer server, ClientHandler sender, StringBuilder message) {
             ArrayList<String> clientNames = extractClientNames(message);
-            if (clientNames == null) server.sendIncorrectSyntaxMessage(sender);
+            if (clientNames == null) server.sendServerNotification(sender, ServerMessage.INCORRECT_SYNTAX);
             else {
                 removePrefix(message);
                 server.sendMessageToClients(sender, clientNames, message);
@@ -49,7 +49,7 @@ public enum Command {
         @Override
         public void execute(GameServer server, ClientHandler sender, StringBuilder message) {
             ArrayList<String> clientNames = extractClientNames(message);
-            if (clientNames == null) server.sendIncorrectSyntaxMessage(sender);
+            if (clientNames == null) server.sendServerNotification(sender, ServerMessage.INCORRECT_SYNTAX);
             else {
                 removePrefix(message);
                 server.sendMessageExceptClients(sender, clientNames, message);
@@ -105,7 +105,7 @@ public enum Command {
         @Override
         public void execute(GameServer server, ClientHandler sender, StringBuilder message) {
             ArrayList<String> clientNames = extractClientNames(message);
-            if (clientNames == null || clientNames.size() != 1) server.sendIncorrectSyntaxMessage(sender);
+            if (clientNames == null || clientNames.size() != 1) server.sendServerNotification(sender, ServerMessage.INCORRECT_SYNTAX);
             else {
                 removePrefix(message);
                 server.sendGiveAWordMessage(sender, clientNames.getFirst(), message);
@@ -159,7 +159,7 @@ public enum Command {
 
     private final String command;
 
-    Command(String command) {
+    ServerCommand(String command) {
         this.command = command;
     }
 

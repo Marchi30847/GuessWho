@@ -1,7 +1,8 @@
 package domain;
 
 import data.ChatMessage;
-import data.Command;
+import data.ServerCommand;
+import data.ServerMessage;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -85,7 +86,7 @@ public class GameServer {
         synchronized (clients) {
             String bannedPhrase = containsBannedPhrase(message.toString());
             if (bannedPhrase != null) {
-                sendContainsBannedPhraseMessage(sender, bannedPhrase);
+                sendServerNotification(sender, ServerMessage.CONTAINS_BANNED_PHRASE, bannedPhrase);
                 return;
             }
             for (ClientHandler client : clients) {
@@ -113,7 +114,7 @@ public class GameServer {
         synchronized (clients) {
             String bannedPhrase = containsBannedPhrase(message.toString());
             if (bannedPhrase != null) {
-                sendContainsBannedPhraseMessage(sender, bannedPhrase);
+                sendServerNotification(sender, ServerMessage.CONTAINS_BANNED_PHRASE, bannedPhrase);
                 return;
             }
             for (ClientHandler client : clients) {
@@ -142,7 +143,7 @@ public class GameServer {
         synchronized (clients) {
             String bannedPhrase = containsBannedPhrase(message.toString());
             if (bannedPhrase != null) {
-                sendContainsBannedPhraseMessage(sender, bannedPhrase);
+                sendServerNotification(sender, ServerMessage.CONTAINS_BANNED_PHRASE, bannedPhrase);
                 return;
             }
             for (ClientHandler client : clients) {
@@ -184,7 +185,7 @@ public class GameServer {
 
     public void sendHelpList(ClientHandler sender) {
         synchronized (clients) {
-            for (Command cmd : Command.values()) {
+            for (ServerCommand cmd : ServerCommand.values()) {
                 sender.getOut().println(formatMessage(
                                 "/help",
                                 serverName,
@@ -242,90 +243,20 @@ public class GameServer {
         }
     }
 
-
-    public void sendUnknownCommandMessage(ClientHandler sender) {
-        synchronized (clients) {
-            sender.getOut().println(formatMessage(
-                            "/server",
-                            serverName,
-                            "Unknown command, for more info use " + Command.HELP.getCommand()
-                    )
-            );
-        }
-    }
-
-    public void sendIncorrectSyntaxMessage(ClientHandler sender) {
-        synchronized (clients) {
-            sender.getOut().println(formatMessage(
-                            "/server",
-                            serverName,
-                            "Incorrect syntax, for more info use " + Command.HELP.getCommand()
-                    )
-            );
-
-        }
-    }
-
-    public void sendContainsBannedPhraseMessage(ClientHandler sender, String bannedPhrase) {
-        synchronized (clients) {
-            sender.getOut().println(formatMessage(
-                            "/server",
-                            serverName,
-                            "Your message contains banned phrase \"" + bannedPhrase + "\", " +
-                                     "for more info use " + Command.BAN.getCommand()
-                    )
-            );
-        }
-    }
-
-    public void sendChangeNameMessage(ClientHandler sender) {
-        synchronized (clients) {
-            sender.getOut().println(formatMessage(
-                            "/server",
-                            serverName,
-                            "Your username is already in use, please use another one"
-                    )
-            );
-        }
-    }
-
-
-
-
-
-
-
-
-
-
-
-    public void sendSuccessfullyVotedMessage(ClientHandler sender, String option) {
-        synchronized (clients) {
-            sender.getOut().println(formatMessage(
-                            "/voted",
-                            serverName,
-                            "You successfully voted for " + option
-                    )
-            );
-        }
-    }
-
-    public void sendAlreadyVotedMessage(ClientHandler sender) {
-        synchronized (clients) {
-            sender.getOut().println(formatMessage(
-                            "/server",
-                            serverName,
-                            "You have already voted"
-                    )
-            );
-        }
+    public void sendServerNotification(ClientHandler sender, ServerMessage message, Object... arguments) {
+        sender.getOut().println(formatMessage(
+                        "/server",
+                        serverName,
+                        message.getMessage(arguments)
+                )
+        );
     }
 
     //add sync on currentTurn
     //perhaps add to the history
     public void sendQuestionMessage(ClientHandler sender, StringBuilder question) {
         if (currentTurn != sender) {
-            sendWaitForYourTurnMessage(sender);
+            sendServerNotification(sender, ServerMessage.NOT_YOUR_TURN);
             return;
         }
         synchronized (clients) {
@@ -346,17 +277,6 @@ public class GameServer {
                         )
                 );
             }
-        }
-    }
-
-    public void sendWaitForYourTurnMessage(ClientHandler sender) {
-        synchronized (clients) {
-            sender.getOut().println(formatMessage(
-                            "/server",
-                            serverName,
-                            "Wait for your turn"
-                    )
-            );
         }
     }
 
@@ -385,19 +305,9 @@ public class GameServer {
         }
     }
 
-    public void sendYourTurnMessage(ClientHandler sender) {
-        synchronized (clients) {
-            sender.getOut().println(formatMessage(
-                            "/server",
-                            serverName,
-                            "It's your turn to ask questions"
-                    )
-            );
-        }
-    }
-
     public void sendGiveAWordMessage(ClientHandler sender, String receiver, StringBuilder word) {
-        if (sender.getClientName().equals(receiver)) {}
+        if (sender.getClientName().equals(receiver)) {
+        }
         synchronized (clients) {
             for (ClientHandler client : clients) {
                 if (client.getClientName().equals(receiver)) {
@@ -420,16 +330,6 @@ public class GameServer {
             }
         }
     }
-
-
-
-
-
-
-
-
-
-
 
     private String formatMessage(String command, String sender, String message) {
        return command + "\n" + sender + "\n" + message;
@@ -472,7 +372,7 @@ public class GameServer {
     //handle a case when someone leaves during a voting process
     public void addVoteFor(ClientHandler sender, String option) {
         if (sender.hasVoted()) {
-            sendAlreadyVotedMessage(sender);
+            sendServerNotification(sender, ServerMessage.ALREADY_VOTED);
             return;
         }
         if (clients.size() < 2) return;
@@ -483,9 +383,9 @@ public class GameServer {
                 votes.put(option, votes.get(option) + 1);
             }
             sender.setVoted(true);
-            sendSuccessfullyVotedMessage(sender, option);
+            sendServerNotification(sender,  ServerMessage.VOTE_COUNTED, option);
         } else {
-            sendIncorrectSyntaxMessage(sender);
+            sendServerNotification(sender, ServerMessage.INCORRECT_SYNTAX);
         }
     }
 
@@ -495,7 +395,7 @@ public class GameServer {
                 sendAnswerForAQuestionMessage(sender);
                 resetVotes();
                 switchTurn();
-                sendYourTurnMessage(currentTurn);
+                sendServerNotification(currentTurn, ServerMessage.YOUR_TURN);
             }
         } else {
 

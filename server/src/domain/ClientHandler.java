@@ -1,6 +1,7 @@
 package domain;
 
-import data.Command;
+import data.ServerCommand;
+import data.ServerMessage;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -57,7 +58,7 @@ public class ClientHandler implements Runnable {
 
     public void handleClientConnection() {
         while (server.clientHasRepeatingName(this)) {
-            server.sendChangeNameMessage(this);
+            server.sendServerNotification(this, ServerMessage.REPEATING_USERNAME);
             try {
                 this.clientName = in.readLine();
             } catch (IOException e) {
@@ -69,16 +70,16 @@ public class ClientHandler implements Runnable {
 
     public void respond(StringBuilder message) {
         if (message.charAt(0) != '/') {
-            Command.ALL.execute(server, this, message.insert(0, "/all "));
+            ServerCommand.ALL.execute(server, this, message.insert(0, "/all "));
             return;
         }
-        for (Command command : Command.values()) {
+        for (ServerCommand command : ServerCommand.values()) {
             if (message.toString().startsWith(command.getCommand())) {
                 command.execute(server, this, message);
                 return;
             }
         }
-        server.sendUnknownCommandMessage(this);
+        server.sendServerNotification(this, ServerMessage.UNKNOWN_COMMAND);
     }
 
     private void disconnect() {

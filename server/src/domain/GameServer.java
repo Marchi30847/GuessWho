@@ -252,6 +252,13 @@ public class GameServer {
         );
     }
 
+
+
+
+
+
+
+
     //add sync on currentTurn
     //perhaps add to the history
     public void sendQuestionMessage(ClientHandler sender, StringBuilder question) {
@@ -330,6 +337,13 @@ public class GameServer {
             }
         }
     }
+
+
+
+
+
+
+
 
     private String formatMessage(String command, String sender, String message) {
        return command + "\n" + sender + "\n" + message;

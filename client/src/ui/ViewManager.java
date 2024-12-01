@@ -1,47 +1,42 @@
 package ui;
 
-import domain.GameClient;
-
 import javax.swing.*;
 
 public class ViewManager {
-    private JFrame frame;
+    private final JFrame frame = new JFrame();
 
-    private final GameClient client;
-    private ConnectionPanel connectionPanel;
-    private GamePanel gamePanel;
+    private ConnectionView connectionPanel;
+    private GameView gamePanel;
 
-    public ViewManager(GameClient client) {
-        this.client = client;
+    public ViewManager() {
         initFrame();
         initPanels();
-        showConnectionPanel();
+        showConnectionView();
     }
 
     private void initFrame() {
-        frame = new JFrame();
         frame.setSize(1920, 1080);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
     }
 
     private void initPanels() {
-        connectionPanel = new ConnectionPanel(client);
-        gamePanel = new GamePanel(client, frame.getSize());
+        connectionPanel = new ConnectionView();
+        gamePanel = new GameView(frame.getSize());
     }
 
-    public void showConnectionPanel() {
+    public void showConnectionView() {
         if (gamePanel != null) frame.remove(gamePanel);
         frame.add(connectionPanel);
         frame.revalidate();
     }
 
-    public void showGamePanel() {
+    public void showGameView() {
         if (gamePanel != null) frame.remove(connectionPanel);
         frame.add(gamePanel);
         frame.revalidate();
     }
 
-    public GamePanel getGamePanel() {return gamePanel;}
-    public ConnectionPanel getConnectionPanel() {return connectionPanel;}
+    public GameView getGameView() {return gamePanel;}
+    public ConnectionView getConnectionView() {return connectionPanel;}
 }

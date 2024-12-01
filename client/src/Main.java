@@ -1,9 +1,10 @@
-import domain.GameClient;
+import presenter.GamePresenter;
+import ui.ViewManager;
 
 import javax.swing.*;
 
 public class Main {
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new GameClient());
+        SwingUtilities.invokeLater(() -> new GamePresenter(new ViewManager()));
     }
 }

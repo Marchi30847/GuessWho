@@ -1,7 +1,6 @@
 package ui;
 
 import data.Pallet;
-import domain.GameClient;
 
 import javax.swing.*;
 import javax.swing.text.BadLocationException;
@@ -9,46 +8,48 @@ import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 
-public class ChatPanel extends JPanel {
-    private final GameClient client;
+public class ChatView extends JPanel {
+    private final JTextPane chatBody = new JTextPane();
+    private final JTextField clientMessage =  new JTextField();
+    private final JScrollPane scrollPane = new JScrollPane(chatBody);
 
-    private final JTextPane chatBody;
-    private final JTextField clientMessage;
-    private final JScrollPane scrollPane;
+    public ChatView(Dimension size) {
+        configure(size);
+        configureChatBody();
+        configureClientMessage(size);
+        configureScrollPane();
+        addAll();
+    }
 
-    public ChatPanel(GameClient client, Dimension size) {
-        this.client = client;
+    private void configure(Dimension size) {
         setPreferredSize(size);
         setLayout(new BorderLayout());
+    }
 
-        chatBody = new JTextPane();
+    private void configureChatBody() {
         chatBody.setBackground(Pallet.CHAT.value());
         chatBody.setEditable(false);
+    }
 
-        clientMessage = new JTextField();
+    private void configureClientMessage(Dimension size) {
         clientMessage.setPreferredSize(new Dimension(size.width, 50));
         clientMessage.setBackground(Pallet.CHAT.value());
         clientMessage.setForeground(Pallet.MESSAGE.value());
         clientMessage.setFocusable(true);
-        clientMessage.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ENTER && !clientMessage.getText().isEmpty()) {
-                    client.sendMessageToServer(clientMessage.getText());
-                    clientMessage.setText("");
-                }
-            }
-        });
+    }
 
-        scrollPane = new JScrollPane(chatBody);
+    private void configureScrollPane() {
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+    }
 
+    private void addAll() {
         add(scrollPane, BorderLayout.CENTER);
         add(clientMessage, BorderLayout.SOUTH);
     }
+
+    public void addSendMessageListener(KeyListener keyListener) {clientMessage.addKeyListener(keyListener);}
 
     public void addMessage(StringBuilder sender, StringBuilder message, Color senderColor, Color messageColor) {
         StyledDocument doc = chatBody.getStyledDocument();
@@ -69,4 +70,8 @@ public class ChatPanel extends JPanel {
 
         chatBody.setCaretPosition(doc.getLength());
     }
+
+    public String getClientMessageText() {return this.clientMessage.getText();}
+
+    public void setClientMessageText(String clientMessageText) {this.clientMessage.setText(clientMessageText);}
 }

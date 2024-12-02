@@ -1,6 +1,7 @@
 package domain;
 
-import data.ServerCommand;
+import data.ChatCommand;
+import data.GameCommand;
 import data.ServerMessage;
 
 import java.io.BufferedReader;
@@ -58,7 +59,6 @@ public class ClientHandler implements Runnable {
 
     public void handleClientConnection() {
         while (server.clientHasRepeatingName(this)) {
-            server.sendServerNotification(this, ServerMessage.REPEATING_USERNAME);
             try {
                 this.clientName = in.readLine();
             } catch (IOException e) {
@@ -70,16 +70,22 @@ public class ClientHandler implements Runnable {
 
     public void respond(StringBuilder message) {
         if (message.charAt(0) != '/') {
-            ServerCommand.ALL.execute(server, this, message.insert(0, "/all "));
+            ChatCommand.ALL.execute(server, this, message.insert(0, "/all "));
             return;
         }
-        for (ServerCommand command : ServerCommand.values()) {
+        for (ChatCommand command : ChatCommand.values()) {
             if (message.toString().startsWith(command.getCommand())) {
                 command.execute(server, this, message);
                 return;
             }
         }
-        server.sendServerNotification(this, ServerMessage.UNKNOWN_COMMAND);
+        for (GameCommand command : GameCommand.values()) {
+            if (message.toString().startsWith(command.getCommand())) {
+                command.execute(server, this, message);
+                return;
+            }
+        }
+        server.getChatService().sendServerNotification(this, ServerMessage.UNKNOWN_COMMAND);
     }
 
     private void disconnect() {

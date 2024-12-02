@@ -1,10 +1,10 @@
 package data;
 
 public enum ServerMessage {
-    UNKNOWN_COMMAND("Unknown command, for more info use " + ServerCommand.HELP.getCommand()),
-    INCORRECT_SYNTAX("Incorrect syntax, for more info use " + ServerCommand.HELP.getCommand()),
+    UNKNOWN_COMMAND("Unknown command, for more info use " + ChatCommand.HELP.getCommand()),
+    INCORRECT_SYNTAX("Incorrect syntax, for more info use " + ChatCommand.HELP.getCommand()),
     CONTAINS_BANNED_PHRASE("Your message contains banned phrase \"%s\", " +
-            "for more info use " + ServerCommand.BAN.getCommand()),
+            "for more info use " + ChatCommand.BAN.getCommand()),
     REPEATING_USERNAME("Your username is already in use, please use another one"),
     YOUR_TURN("It's your turn to ask questions"),
     NOT_YOUR_TURN("Wait for your turn"),

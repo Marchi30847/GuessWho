@@ -134,7 +134,6 @@ public class ConnectionView extends JPanel {
         if (hostName.getText().isEmpty() && hostName != focused) hostName.setText("here");
         if (hostPort.getText().isEmpty() && hostPort != focused) hostPort.setText("here");
     }
-
     public void setIncorrectHostName() {hostName.setText("Enter a valid host name");}
     public void setIncorrectHostPort() {hostPort.setText("Enter a valid host port");}
 }

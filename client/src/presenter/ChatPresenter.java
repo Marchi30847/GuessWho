@@ -24,7 +24,7 @@ public class ChatPresenter {
                 super.keyPressed(e);
 
                 String clientMessageText = view.getClientMessageText();
-                if (e.getKeyCode() == KeyEvent.VK_ENTER && clientMessageText.isEmpty()) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER && !clientMessageText.isEmpty()) {
                         model.sendMessage(clientMessageText);
                         view.setClientMessageText("");
                 }

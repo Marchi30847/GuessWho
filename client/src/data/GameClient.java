@@ -72,6 +72,9 @@ public class GameClient {
 
     public void setUserName(String userName) {this.userName = userName;}
 
+
+
+
     private class MessageListener implements Runnable {
         @Override
         public void run() {

@@ -5,38 +5,42 @@ import javax.swing.*;
 public class ViewManager {
     private final JFrame frame = new JFrame();
 
-    private ConnectionView connectionPanel;
-    private GameView gamePanel;
+    private GameView gameView;
+    private ConnectionView connectionView;
 
     public ViewManager() {
-        initFrame();
-        initPanels();
+        configureFrame();
+        configureConnectionView();
+        configureGameView();
         showConnectionView();
     }
 
-    private void initFrame() {
+    private void configureFrame() {
         frame.setSize(1920, 1080);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
     }
 
-    private void initPanels() {
-        connectionPanel = new ConnectionView();
-        gamePanel = new GameView(frame.getSize());
+    private void configureConnectionView() {
+        connectionView = new ConnectionView();
+    }
+
+    private void configureGameView() {
+        gameView = new GameView(frame.getSize());
     }
 
     public void showConnectionView() {
-        if (gamePanel != null) frame.remove(gamePanel);
-        frame.add(connectionPanel);
+        if (gameView != null) frame.remove(gameView);
+        frame.add(connectionView);
         frame.revalidate();
     }
 
     public void showGameView() {
-        if (gamePanel != null) frame.remove(connectionPanel);
-        frame.add(gamePanel);
+        if (gameView != null) frame.remove(connectionView);
+        frame.add(gameView);
         frame.revalidate();
     }
 
-    public GameView getGameView() {return gamePanel;}
-    public ConnectionView getConnectionView() {return connectionPanel;}
+    public GameView getGameView() {return gameView;}
+    public ConnectionView getConnectionView() {return connectionView;}
 }

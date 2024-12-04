@@ -11,11 +11,10 @@ public enum GameCommand implements Command {
         @Override
         public void execute(GameServer server, ClientHandler sender, StringBuilder message) {
             ArrayList<String> clientNames = CommandUtils.extractClientNames(message);
-            //fix
             if (clientNames == null || clientNames.size() != 1) server.getChatService().sendServerNotification(sender, ServerMessage.INCORRECT_SYNTAX);
             else {
                 CommandUtils.removeList(message, ']');
-                server.getGameService().sendGiveAWordMessage(sender, clientNames.getFirst(), message);
+                server.getGameService().sendGiveWordMessage(sender, clientNames.getFirst(), message);
             }
         }
 
@@ -48,7 +47,7 @@ public enum GameCommand implements Command {
         @Override
         public String getDescription() {
             return "/ask question: " +
-                    "Raises a question if it is your turn";
+                    "Raises a question if it is your turn.";
         }
     };
 

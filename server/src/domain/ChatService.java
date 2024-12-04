@@ -1,143 +1,166 @@
 package domain;
 
-import data.ChatCommand;
-import data.ChatMessage;
-import data.ServerMessage;
+import data.*;
 
 import java.util.*;
 
 public class ChatService {
+    private final MessageSender messageSender;
+    private final MessageHistory messageHistory;
+
     private final List<ClientHandler> clients;
     private final List<String> bannedPhrases;
-    private final ArrayList<ChatMessage> chatHistory;
 
-    private final String serverName;
-
-    public ChatService(List<ClientHandler> clients, List<String> bannedPhrases, String serverName) {
+    public ChatService(List<ClientHandler> clients, List<String> bannedPhrases, MessageSender messageSender, MessageHistory messageHistory) {
         this.clients = clients;
         this.bannedPhrases = bannedPhrases;
-        this.chatHistory = new ArrayList<>();
-        this.serverName = serverName;
-    }
-
-    private void sendMessage(String command, ClientHandler sender, ArrayList<String> targetClients, StringBuilder message) {
-        synchronized (clients) {
-            String bannedPhrase = ServerUtils.containsBannedPhrase(message.toString(), bannedPhrases);
-            if (bannedPhrase != null) {
-                sendServerNotification(sender, ServerMessage.CONTAINS_BANNED_PHRASE, bannedPhrase);
-                return;
-            }
-
-            sender.getOut().println(ServerUtils.formatMessage(command, "Me", message.toString()));
-
-            String formattedMessage = ServerUtils.formatMessage(command, sender.getClientName(), message.toString());
-            for (ClientHandler client : clients) {
-                if (!client.equals(sender) && targetClients.contains(client.getClientName())) {
-                    client.getOut().println(formattedMessage);
-                }
-            }
-        }
+        this.messageSender = messageSender;
+        this.messageHistory = messageHistory;
     }
 
     public void sendMessageToAllClients(ClientHandler sender, StringBuilder message) {
-        sendMessage("/client", sender,ServerUtils.getClientNames(clients), message);
-        addMessageToHistory("/client", sender.getClientName(), message.toString());
+        String bannedPhrase = ServerUtils.containsBannedPhrase(message.toString(), bannedPhrases);
+        if (bannedPhrase != null) {
+            messageSender.sendServerNotification(
+                    "/server",
+                    sender,
+                    ServerMessage.CONTAINS_BANNED_PHRASE,
+                    bannedPhrase
+            );
+            return;
+        }
+
+        messageSender.sendClientMessage(
+                "/client",
+                sender,
+                ServerUtils.getClientNames(clients),
+                message.toString()
+        );
+
+        messageHistory.addClientMessageToHistory(
+                "/client",
+                sender.getClientName(),
+                message.toString()
+        );
     }
 
     public void sendMessageToClients(ClientHandler sender, ArrayList<String> targetClients, StringBuilder message) {
-        sendMessage("/client", sender, targetClients, message.insert(0, "(Personal) "));
+        String bannedPhrase = ServerUtils.containsBannedPhrase(message.toString(), bannedPhrases);
+        if (bannedPhrase != null) {
+            messageSender.sendServerNotification(
+                    "/server",
+                    sender,
+                    ServerMessage.CONTAINS_BANNED_PHRASE,
+                    bannedPhrase
+            );
+            return;
+        }
+
+        messageSender.sendClientMessage(
+                "/client",
+                sender,
+                targetClients,
+                message.insert(0, "(Personal) ").toString()
+        );
     }
 
     public void sendMessageExceptClients(ClientHandler sender, ArrayList<String> nonTargetClients, StringBuilder message) {
+        String bannedPhrase = ServerUtils.containsBannedPhrase(message.toString(), bannedPhrases);
+        if (bannedPhrase != null) {
+            messageSender.sendServerNotification(
+                    "/server",
+                    sender,
+                    ServerMessage.CONTAINS_BANNED_PHRASE,
+                    bannedPhrase
+            );
+            return;
+        }
+
         ArrayList<String> targetClients = ServerUtils.getClientNames(clients);
         targetClients.removeAll(nonTargetClients);
-        sendMessage("/client", sender, targetClients, message.insert(0, "(Personal) "));
+        messageSender.sendClientMessage(
+                "/client",
+                sender,
+                targetClients,
+                message.insert(0, "(Personal) ").toString()
+        );
     }
 
     public void sendClientList(ClientHandler sender) {
-        synchronized (clients) {
-            sender.getOut().println(ServerUtils.formatMessage(
-                            "/server",
-                            serverName,
-                            ServerUtils.getClientNames(clients).toString()
-                    )
-            );
-        }
+        messageSender.sendServerMessage(
+                "/server",
+                new ArrayList<>(Collections.singleton(sender.getClientName())),
+                ServerUtils.getClientNames(clients).toString()
+        );
     }
 
+    //possibly send all commands
     public void sendHelpList(ClientHandler sender) {
         synchronized (clients) {
-            for (ChatCommand cmd : ChatCommand.values()) {
-                sender.getOut().println(ServerUtils.formatMessage(
-                                "/help",
-                                serverName,
-                                cmd.getDescription()
-                        )
+            for (Command cmd : ChatCommand.values()) {
+                messageSender.sendServerMessage(
+                        "/help",
+                        new ArrayList<>(Collections.singletonList(sender.getClientName())),
+                        cmd.getDescription()
+                );
+            }
+            for (Command cmd : GameCommand.values()) {
+                messageSender.sendServerMessage(
+                        "/help",
+                        new ArrayList<>(Collections.singletonList(sender.getClientName())),
+                        cmd.getDescription()
                 );
             }
         }
     }
 
     public void sendBannedPhrasesList(ClientHandler sender) {
-        synchronized (clients) {
-            sender.getOut().println(ServerUtils.formatMessage(
-                            "/ban",
-                            serverName,
-                            bannedPhrases.toString()
-                    )
-            );
-        }
+        messageSender.sendServerMessage(
+                "/ban",
+                new ArrayList<>(Collections.singleton(sender.getClientName())),
+                bannedPhrases.toString()
+        );
     }
 
     public void sendClientConnectedMessage(ClientHandler sender) {
-        synchronized (clients) {
-            for (ClientHandler client : clients) {
-                client.getOut().println(ServerUtils.formatMessage(
-                                "/server",
-                                serverName,
-                                "client " + sender.getClientName() + " connected"
-                        )
-                );
-            }
-            addMessageToHistory("/server", serverName, "client " + sender.getClientName() + " connected");
-        }
+        messageSender.sendServerMessage(
+                "/server",
+                ServerUtils.getClientNames(clients),
+                "client " + sender.getClientName() + " connected"
+        );
+
+        messageHistory.addServerMessageToHistory(
+                "/server",
+                "client " + sender.getClientName() + " connected"
+        );
     }
 
     public void sendClientDisconnectedMessage(ClientHandler sender) {
-        synchronized (clients) {
-            for (ClientHandler client : clients) {
-                client.getOut().println(ServerUtils.formatMessage(
-                                "/server",
-                                serverName,
-                                "client " + sender.getClientName() + " disconnected"
-                        )
-                );
-            }
-            addMessageToHistory("/server", serverName, "client " + sender.getClientName() + " disconnected");
-        }
+        messageSender.sendServerMessage(
+                "/server",
+                ServerUtils.getClientNames(clients),
+                "client " + sender.getClientName() + " connected"
+        );
+
+        messageHistory.addServerMessageToHistory(
+                "/server",
+                "client " + sender.getClientName() + " disconnected"
+        );
     }
 
 
     public void sendServerNotification(ClientHandler sender, ServerMessage message, Object... arguments) {
-        sender.getOut().println(ServerUtils.formatMessage(
-                        "/server",
-                        serverName,
-                        message.getMessage(arguments)
-                )
+        messageSender.sendServerNotification(
+                "/server",
+                sender,
+                message,
+                arguments
         );
     }
 
-    public void sendChatHistory (ClientHandler sender) {
-        synchronized (chatHistory) {
-            for (ChatMessage chatMessage : chatHistory) {
-                sender.getOut().println(ServerUtils.formatMessage(chatMessage));
-            }
-        }
-    }
-
-    private void addMessageToHistory(String command, String sender, String message) {
-        synchronized (chatHistory) {
-            chatHistory.add(new ChatMessage(command, sender, message));
+    public void sendChatHistory(ClientHandler sender) {
+        for (ChatMessage chatMessage : messageHistory.getHistory()) {
+            sender.getOut().println(ServerUtils.formatMessage(chatMessage));
         }
     }
 }

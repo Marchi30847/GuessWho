@@ -6,10 +6,20 @@ public enum ServerMessage {
     CONTAINS_BANNED_PHRASE("Your message contains banned phrase \"%s\", " +
             "for more info use " + ChatCommand.BAN.getCommand()),
     REPEATING_USERNAME("Your username is already in use, please use another one"),
+
+    NOT_ENOUGH_PLAYERS("Wait for more players to join"),
     YOUR_TURN("It's your turn to ask questions"),
     NOT_YOUR_TURN("Wait for your turn"),
+
     ALREADY_VOTED("You have already voted"),
-    VOTE_COUNTED("You successfully voted for %s");
+    VOTE_COUNTED("You successfully voted for %s"),
+    WAIT_FOR_VOTES("Waiting for others to vote"),
+
+    ANSWER_OWN_QUESTION("You cannot give answer to your own question"),
+    ANSWER_QUESTION("The answer for your question is \"%s\""),
+
+    ALREADY_GIVEN("The player %s already has word"),
+    GIVE_YOURSELF("You cannot give a word to yourself");
 
     private final String template;
 

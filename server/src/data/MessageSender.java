@@ -5,6 +5,7 @@ import domain.ClientHandler;
 import java.util.ArrayList;
 
 public interface MessageSender {
-    void sendClientMessageTo(String command, ClientHandler sender, ArrayList<String> targetClients, StringBuilder message);
-    void sendServerMessageTo(String command, ClientHandler sender, ArrayList<String> targetClients, StringBuilder message);
+    void sendClientMessage(String command, ClientHandler sender, ArrayList<String> targetClients, String message);
+    void sendServerMessage(String command, ArrayList<String> targetClients, String message);
+    void sendServerNotification(String command, ClientHandler client, ServerMessage message, Object... arguments);
 }

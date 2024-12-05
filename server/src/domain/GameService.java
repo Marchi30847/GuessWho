@@ -8,10 +8,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 
 //add some messages to history
 //add functionality if client leaves during their turn
+//refactor GameMonitor with Executor functionality
+
 public class GameService {
     private final MessageSender messageSender;
     private final MessageHistory messageHistory;
@@ -23,6 +27,7 @@ public class GameService {
     private ClientHandler currentTurn;
     private int currentClientIndex;
 
+    private ExecutorService gameMonitorExecutor = Executors.newSingleThreadExecutor();
     private boolean gameActive = false;
 
     public GameService(List<ClientHandler> clients, MessageSender messageSender, MessageHistory messageHistory) {
@@ -33,6 +38,8 @@ public class GameService {
         votes.put("YES", 0);
         votes.put("NO", 0);
         votes.put("IDK", 0);
+
+        gameMonitorExecutor.execute(new GameMonitor());
     }
 
     public void sendGameStarted() {
@@ -44,6 +51,20 @@ public class GameService {
     }
 
     public void sendQuestionMessage(ClientHandler sender, StringBuilder question) {
+        if (!gameActive) {
+            messageSender.sendServerMessage(
+                    "/server",
+                    ServerUtils.getClientNames(clients),
+                    "goyda"
+            );
+            return;
+        }
+
+        if (!everyOneHasWord()) {
+            sendNotEveryoneHasWord();
+            return;
+        }
+
         if (currentTurn != sender) {
             messageSender.sendServerNotification(
                     "/server",
@@ -77,6 +98,7 @@ public class GameService {
     }
 
     //send a notification to the receiver
+    //add a proper logic to handle cases when client is already given a word
     //handle a situation when a word is given to a non-existing client
     public void sendGiveWordMessage(ClientHandler sender, String receiver, StringBuilder word) {
         if (sender.getClientName().equals(receiver)) {
@@ -88,7 +110,17 @@ public class GameService {
             return;
         }
 
+        if (!ServerUtils.getClientNames(clients).contains(receiver)) {
+            messageSender.sendServerNotification(
+                    "/server",
+                    sender,
+                    ServerMessage.INCORRECT_SYNTAX
+            );
+            return;
+        }
+
         if(!hasWord(receiver)) giveWord(receiver, word.toString());
+        else return;
 
         ArrayList<String> targetClients = ServerUtils.getClientNames(clients);
         targetClients.remove(receiver);
@@ -103,11 +135,12 @@ public class GameService {
 
     public void addVoteFor(ClientHandler sender, String option) {
         if (!gameActive) {
-            messageSender.sendServerNotification(
-                    "/server",
-                    sender,
-                    ServerMessage.NOT_ENOUGH_PLAYERS
-            );
+            sendNotEnoughPlayers();
+            return;
+        }
+
+        if (!everyOneHasWord()) {
+            sendNotEveryoneHasWord();
             return;
         }
 
@@ -140,7 +173,6 @@ public class GameService {
                     ServerMessage.VOTE_COUNTED,
                     option
             );
-            checkGameState();
         } else {
             messageSender.sendServerNotification(
                     "/server",
@@ -150,27 +182,10 @@ public class GameService {
         }
     }
 
-    private void checkGameState() {
-        if (everyOneHasWord()) {
-            if (everyOneVoted()) {
-                sendAnswerForAQuestionMessage(currentTurn);
-                resetVotes();
-                switchTurn();
-            }
-        }
-    }
-
     public void startGame() {
         sendGameStarted();
-        gameActive = true;
         currentClientIndex = 0;
         currentTurn = clients.get(currentClientIndex);
-
-        messageSender.sendServerNotification(
-                "/server",
-                currentTurn,
-                ServerMessage.YOUR_TURN
-        );
     }
 
     private void sendNotEveryoneHasWord() {
@@ -178,6 +193,14 @@ public class GameService {
                 "/server",
                 ServerUtils.getClientNames(clients),
                 "Everyone must be given a word"
+        );
+    }
+
+    private void sendNotEnoughPlayers() {
+        messageSender.sendServerMessage(
+                "/server",
+                ServerUtils.getClientNames(clients),
+                "Wait for more players to join"
         );
     }
 
@@ -205,6 +228,14 @@ public class GameService {
         synchronized (votes) {
             for (String option : votes.keySet())
                 votes.put(option, 0);
+        }
+    }
+
+    private void resetHasVoted() {
+        synchronized (clients) {
+            for (ClientHandler client : clients) {
+                client.setVoted(false);
+            }
         }
     }
 
@@ -243,11 +274,43 @@ public class GameService {
             currentClientIndex = (currentClientIndex + 1) % clients.size();
             currentTurn = clients.get(currentClientIndex);
         }
+    }
 
-        messageSender.sendServerNotification(
-                "/server",
-                currentTurn,
-                ServerMessage.YOUR_TURN
-        );
+
+    private class GameMonitor implements Runnable {
+        private boolean turnMessageSent = false;
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+
+                if (!clients.isEmpty()) {
+                    if (everyOneHasWord()) {
+                        if (!turnMessageSent) {
+                            messageSender.sendServerNotification(
+                                    "/server",
+                                    currentTurn,
+                                    ServerMessage.YOUR_TURN
+                            );
+                            turnMessageSent = true;
+                        }
+                        gameActive = true;
+                        if (everyOneVoted()) {
+                            sendAnswerForAQuestionMessage(currentTurn);
+                            resetVotes();
+                            resetHasVoted();
+                            switchTurn();
+                            turnMessageSent = false;
+                        }
+                    } else {
+                        gameActive = false;
+                    }
+                }
+            }
+        }
     }
 }

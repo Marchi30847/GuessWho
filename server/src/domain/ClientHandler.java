@@ -10,6 +10,9 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
+//try to reduce dependency with GameServer by returning some value if run() stops executing,
+//so that it is handled directly in GameServer
+
 public class ClientHandler implements Runnable {
     private final GameServer server;
     private final Socket clientSocket;
@@ -88,7 +91,7 @@ public class ClientHandler implements Runnable {
         server.getChatService().sendServerNotification(this, ServerMessage.UNKNOWN_COMMAND);
     }
 
-    private void disconnect() {
+    public void disconnect() {
         try {
             server.removeClient(this);
             if (in != null) in.close();

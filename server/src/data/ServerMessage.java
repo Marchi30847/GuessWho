@@ -7,7 +7,6 @@ public enum ServerMessage {
             "for more info use " + ChatCommand.BAN.getCommand()),
     REPEATING_USERNAME("Your username is already in use, please use another one"),
 
-    NOT_ENOUGH_PLAYERS("Wait for more players to join"),
     YOUR_TURN("It's your turn to ask questions"),
     NOT_YOUR_TURN("Wait for your turn"),
 

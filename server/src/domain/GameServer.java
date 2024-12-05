@@ -4,19 +4,22 @@ import data.*;
 
 import java.io.*;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 //сделать возможность отправки многих сообщений за раз или
 //добавить возможность обрабатывать сообщение с числом линий больше 3 или
 //добавить доп синхронизацию на отправку композитных сообщений
 
 //добавить ответы сервера всем пользователям в темплейты ответов
+
 public class GameServer {
     private ServerSocket serverSocket;
     private final int port;
     private final String serverName;
 
+    private final ExecutorService clientHandlerExecutor = Executors.newCachedThreadPool();
     private final List<ClientHandler> clients = new ArrayList<>();
 
     private final ChatService chatService;
@@ -33,7 +36,13 @@ public class GameServer {
                 bannedPhrases.add(bannedPhrase);
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error reading server configuration file: " + e.getMessage(), e);
+        }
+
+        try {
+            serverSocket = new ServerSocket(port);
+        } catch (IOException e) {
+            throw new RuntimeException("Could not initialize server socket on port " + port, e);
         }
 
         chatService = new ChatService(clients, bannedPhrases, createMessageSender(), createMessageHistory());
@@ -43,18 +52,33 @@ public class GameServer {
 
     public void start() {
         try {
-            serverSocket = new ServerSocket(port);
-        } catch (IOException e) {
-            System.err.println("Could not listen on port: " + port);
-        }
-        while (true) {
-            try {
-                Socket socket = serverSocket.accept();
-                ClientHandler client = new ClientHandler(this, socket);
-                new Thread(client).start();
-            } catch (IOException e) {
-                System.err.println("Accept failed");
+            while (true) {
+                clientHandlerExecutor.execute(new ClientHandler(
+                        this,
+                        serverSocket.accept()
+                ));
             }
+        } catch (IOException e) {
+            System.err.println("Accept failed");
+        } finally {
+            stop();
+        }
+    }
+
+    public void stop() {
+        try {
+            serverSocket.close();
+
+            synchronized (clients) {
+                for (ClientHandler client : clients) {
+                    client.disconnect();
+                }
+                clients.clear();
+            }
+        } catch (IOException e) {
+            System.err.println("Error closing server socket: " + e.getMessage());
+        } finally {
+            clientHandlerExecutor.shutdownNow();
         }
     }
 
@@ -78,13 +102,15 @@ public class GameServer {
     }
 
     public boolean clientHasRepeatingName(ClientHandler client) {
-        for (ClientHandler c : clients) {
-            if (c.getClientName().equals(client.getClientName())) {
-                chatService.sendServerNotification(client, ServerMessage.REPEATING_USERNAME);
-                return true;
+        synchronized (clients) {
+            for (ClientHandler c : clients) {
+                if (c.getClientName().equals(client.getClientName())) {
+                    chatService.sendServerNotification(client, ServerMessage.REPEATING_USERNAME);
+                    return true;
+                }
             }
+            return false;
         }
-        return false;
     }
 
     private MessageSender createMessageSender() {

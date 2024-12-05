@@ -8,6 +8,8 @@ import java.net.ConnectException;
 import java.net.NoRouteToHostException;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class GameClient {
     private Socket socket;
@@ -17,11 +19,10 @@ public class GameClient {
     private String userName;
 
     private final ClientCallBack callBack;
-    private final MessageListener messageListener;
+    private final ExecutorService messageListenerExecutor = Executors.newSingleThreadExecutor();
 
     public GameClient(ClientCallBack callBack) {
         this.callBack = callBack;
-        messageListener = new MessageListener();
     }
 
     public boolean connect(String host, String port) {
@@ -29,7 +30,7 @@ public class GameClient {
             socket = new Socket(host, Integer.parseInt(port));
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            new Thread(messageListener).start();
+            messageListenerExecutor.execute(new MessageListener());
             out.println(userName);
             return true;
         } catch (NumberFormatException e) {
@@ -60,6 +61,8 @@ public class GameClient {
             System.out.println("Client " + userName + " disconnected.");
         } catch (IOException e) {
             System.err.println("Error closing connection for client: " + userName);
+        } finally {
+            messageListenerExecutor.shutdownNow();
         }
 
     }

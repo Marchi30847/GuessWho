@@ -30,7 +30,7 @@ public class GameClient {
             socket = new Socket(host, Integer.parseInt(port));
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            messageListenerExecutor.execute(new MessageListener());
+            messageListenerExecutor.submit(new MessageListener());
             out.println(userName);
             return true;
         } catch (NumberFormatException e) {

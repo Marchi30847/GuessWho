@@ -13,6 +13,7 @@ import java.util.concurrent.Executors;
 //добавить доп синхронизацию на отправку композитных сообщений
 
 //добавить ответы сервера всем пользователям в темплейты ответов
+//move client disconnecting to GameServer
 
 public class GameServer {
     private ServerSocket serverSocket;
@@ -53,7 +54,7 @@ public class GameServer {
     public void start() {
         try {
             while (true) {
-                clientHandlerExecutor.execute(new ClientHandler(
+                clientHandlerExecutor.submit(new ClientHandler(
                         this,
                         serverSocket.accept()
                 ));
@@ -96,6 +97,7 @@ public class GameServer {
 
     public void removeClient(ClientHandler client) {
         synchronized (clients) {
+            gameService.onClientRemoved(client);
             clients.remove(client);
             chatService.sendClientDisconnectedMessage(client);
         }

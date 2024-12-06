@@ -29,6 +29,7 @@ public class GameService {
 
     private ExecutorService gameMonitorExecutor = Executors.newSingleThreadExecutor();
     private boolean gameActive = false;
+    private boolean everyoneHasWord = false;
 
     public GameService(List<ClientHandler> clients, MessageSender messageSender, MessageHistory messageHistory) {
         this.clients = clients;
@@ -39,7 +40,11 @@ public class GameService {
         votes.put("NO", 0);
         votes.put("IDK", 0);
 
-        gameMonitorExecutor.execute(new GameMonitor());
+        gameMonitorExecutor.submit(new GameMonitor());
+    }
+
+    public void onClientRemoved(ClientHandler removed) {
+        if (currentTurn == removed) switchTurn();
     }
 
     public void sendGameStarted() {
@@ -48,23 +53,23 @@ public class GameService {
                 ServerUtils.getClientNames(clients),
                 "The game begins"
         );
+
+        messageHistory.addServerMessageToHistory(
+                "/server",
+                "The game begins"
+        );
     }
 
     public void sendQuestionMessage(ClientHandler sender, StringBuilder question) {
         if (!gameActive) {
-            messageSender.sendServerMessage(
-                    "/server",
-                    ServerUtils.getClientNames(clients),
-                    "goyda"
-            );
+            sendNotEnoughPlayers();
             return;
         }
 
-        if (!everyOneHasWord()) {
+        if (!everyoneHasWord) {
             sendNotEveryoneHasWord();
             return;
         }
-
         if (currentTurn != sender) {
             messageSender.sendServerNotification(
                     "/server",
@@ -101,6 +106,11 @@ public class GameService {
     //add a proper logic to handle cases when client is already given a word
     //handle a situation when a word is given to a non-existing client
     public void sendGiveWordMessage(ClientHandler sender, String receiver, StringBuilder word) {
+        if (!gameActive) {
+            sendNotEnoughPlayers();
+            return;
+        }
+
         if (sender.getClientName().equals(receiver)) {
             messageSender.sendServerNotification(
                     "/server",
@@ -128,7 +138,7 @@ public class GameService {
                 "/server",
                 sender,
                 targetClients,
-                receiver + " is given a word \"" + word.toString() + "\" by " + sender.getClientName()
+                receiver + " is given a word \"" + word + "\" by " + sender.getClientName()
         );
 
     }
@@ -139,7 +149,7 @@ public class GameService {
             return;
         }
 
-        if (!everyOneHasWord()) {
+        if (!everyoneHasWord) {
             sendNotEveryoneHasWord();
             return;
         }
@@ -188,19 +198,21 @@ public class GameService {
         currentTurn = clients.get(currentClientIndex);
     }
 
-    private void sendNotEveryoneHasWord() {
-        messageSender.sendServerMessage(
-                "/server",
-                ServerUtils.getClientNames(clients),
-                "Everyone must be given a word"
-        );
-    }
 
+    //send these messages as notifications
     private void sendNotEnoughPlayers() {
         messageSender.sendServerMessage(
                 "/server",
                 ServerUtils.getClientNames(clients),
                 "Wait for more players to join"
+        );
+    }
+
+    private void sendNotEveryoneHasWord() {
+        messageSender.sendServerMessage(
+                "/server",
+                ServerUtils.getClientNames(clients),
+                "Everyone must be given a word"
         );
     }
 
@@ -279,6 +291,7 @@ public class GameService {
 
     private class GameMonitor implements Runnable {
         private boolean turnMessageSent = false;
+
         @Override
         public void run() {
             while (true) {
@@ -288,26 +301,25 @@ public class GameService {
                     throw new RuntimeException(e);
                 }
 
-                if (!clients.isEmpty()) {
-                    if (everyOneHasWord()) {
-                        if (!turnMessageSent) {
-                            messageSender.sendServerNotification(
-                                    "/server",
-                                    currentTurn,
-                                    ServerMessage.YOUR_TURN
-                            );
-                            turnMessageSent = true;
-                        }
-                        gameActive = true;
-                        if (everyOneVoted()) {
-                            sendAnswerForAQuestionMessage(currentTurn);
-                            resetVotes();
-                            resetHasVoted();
-                            switchTurn();
-                            turnMessageSent = false;
-                        }
-                    } else {
-                        gameActive = false;
+                gameActive = clients.size() > 1;
+                everyoneHasWord = everyOneHasWord();
+
+                if (gameActive && everyoneHasWord) {
+                    if (!turnMessageSent) {
+                        messageSender.sendServerNotification(
+                                "/server",
+                                currentTurn,
+                                ServerMessage.YOUR_TURN
+                        );
+                        turnMessageSent = true;
+                    }
+
+                    if (everyOneVoted()) {
+                        sendAnswerForAQuestionMessage(currentTurn);
+                        resetVotes();
+                        resetHasVoted();
+                        switchTurn();
+                        turnMessageSent = false;
                     }
                 }
             }

@@ -139,7 +139,7 @@ public class ChatService {
         messageSender.sendServerMessage(
                 "/server",
                 ServerUtils.getClientNames(clients),
-                "client " + sender.getClientName() + " connected"
+                "client " + sender.getClientName() + " disconnected"
         );
 
         messageHistory.addServerMessageToHistory(

@@ -6,6 +6,8 @@ import domain.GameServer;
 
 import java.util.ArrayList;
 
+//replace GameServer parameter by some common interface of ChatService and GameService
+
 public enum ChatCommand implements Command {
     ALL("/all ") {
         @Override
